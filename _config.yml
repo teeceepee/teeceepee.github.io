@@ -3,8 +3,9 @@
 # ----------------------- #
 
 url: http://teeceepee.github.com
-title: My Octopress Blog
-subtitle: A blogging framework for me.
+title: Why Y
+#subtitle: A blogging framework for me.
+subtitle: 
 author:
 simple_search: http://google.com/search
 description:
