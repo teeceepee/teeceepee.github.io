@@ -3,7 +3,7 @@ layout: post
 title: "Ruby StringScanner"
 date: 2013-06-03 20:09
 comments: true
-categories: 
+categories: strscan
 ---
 
 想写一个简单的解释器，源代码用字符串表示。本来想自己写一个scanner，后来发现Ruby库中有一个StringScanner类，但不是用Ruby写的，不能做源码浏览了。在这里记录一下StringScanner的用法。
