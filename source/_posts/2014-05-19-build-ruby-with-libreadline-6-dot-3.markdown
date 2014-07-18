@@ -1,6 +1,6 @@
 ---
 layout: post
-title: "build ruby with libreadline 6.3"
+title: "使用libreadline6.3编译Ruby"
 date: 2014-05-19 21:22
 comments: true
 categories:
