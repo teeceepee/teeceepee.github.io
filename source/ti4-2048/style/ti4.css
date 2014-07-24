@@ -1,0 +1,60 @@
+// Override original stylesheets.
+
+.tile-inner {
+    background-position: center center !important;
+    background-size: cover !important;
+    background-repeat: no-repeat !important;
+}
+
+.tile-2 .tile-inner{
+    background-image: url(ti4/11-mouz.jpg) !important;
+}
+
+.tile-4 .tile-inner {
+    background-image: url(ti4/10-liquid.jpg) !important;
+}
+
+
+.tile-8 .tile-inner {
+    background-image: url(ti4/09-titan.jpg) !important;
+}
+
+
+.tile-16 .tile-inner {
+    background-image: url(ti4/08-navi.jpg) !important;
+}
+
+
+.tile-32 .tile-inner {
+    background-image: url(ti4/07-ig.jpg) !important;
+}
+
+
+.tile-64 .tile-inner {
+    background-image: url(ti4/06-cloud9.jpg) !important;
+}
+
+
+.tile-128 .tile-inner {
+    background-image: url(ti4/05-lgd.jpg) !important;
+}
+
+
+.tile-256 .tile-inner {
+    background-image: url(ti4/04-dk.jpg) !important;
+}
+
+
+.tile-512 .tile-inner {
+    background-image: url(ti4/03-eg.jpg) !important;
+}
+
+
+.tile-1024 .tile-inner {
+    background-image: url(ti4/02-vg.jpg) !important;
+}
+
+
+.tile-2048 .tile-inner {
+    background-image: url(ti4/01-newbee.jpg) !important;
+}
