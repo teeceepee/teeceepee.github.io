@@ -1,0 +1,249 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Debian禁用不必要的开机自启动服务 - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2013/12/30/remove-unnecessary-auto-start-services">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Debian禁用不必要的开机自启动服务</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。Debian有一个命令，但是每次改都要现查，老是记不住。写一篇博客加深一下印象吧。</p>
+
+<p>这个命令是<code>update-rc.d</code>，看名字就知道是修改rc?.d的。根据<code>man update-rc.d</code>，用法如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> <span class="o">[</span>-f<span class="o">]</span> name remove
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name defaults
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name disable|enable <span class="o">[</span> S|2|3|4|5 <span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用到的是最后一个，如果最后面的运行级别不指定则修改所有级别。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># 禁止Redis开机启动</span>
+</span><span class='line'>sudo update-rc.d redis-server disable
+</span><span class='line'><span class="c"># Redis开机启动</span>
+</span><span class='line'>sudo update-rc.d redis-server <span class="nb">enable</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>写这篇博客时顺便学会了一个查看所有服务运行状态的命令，+表示正在运行，-表示没有运行，?表示不详（？），可能是不支持用status查询状态吧。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service --status-all
+</span><span class='line'><span class="c"># ==&gt;</span>
+</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpi-fakekey
+</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  acpi-support
+</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpid
+</span><span class='line'> <span class="o">[</span> ? <span class="o">]</span>  alsa-utils
+</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  anacron
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/12/28/install-docker-and-build-an-image/" title="Previous Post: 安装docker并手工构建一个image">&laquo; 安装docker并手工构建一个image</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/" title="Next Post: 使用libreadline6.3编译Ruby">使用libreadline6.3编译Ruby &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/30/remove-unnecessary-auto-start-services/">Debian禁用不必要的开机自启动服务</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/28/install-docker-and-build-an-image/">安装docker并手工构建一个image</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">metaprogramming ruby notes 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

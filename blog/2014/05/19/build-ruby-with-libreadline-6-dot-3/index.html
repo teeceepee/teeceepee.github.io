@@ -1,0 +1,296 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>使用libreadline6.3编译Ruby - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。 原来曾经尝试过rbenv，感觉还不错， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">使用libreadline6.3编译Ruby</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T21:22:00+08:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。</p>
+
+<p>原来曾经尝试过rbenv，感觉还不错，又听到过一些RVM负面的信息，所以决定还是从rbenv入手。rbenv的安装很简单，按照官网的README来就好。所有的文件都安装在 <code>~/.rbenv/</code>目录中，还是比较好管理的。当时做得比较急，安装完成就准备安装ruby，但是tab了半天也没出<code>install</code>这个子命令。咋回事儿？继续看README吧，原来把编译安装ruby的功能做成了插件，需要单独安装。安装好后，终于有<code>install</code>子命令了，挑个比较新的版本，走起。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rbenv install 2.1.1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当时的网速不太好，历尽千辛万苦，终于下载完了。解压、编译，然后等来的是一个编译错误。rbenv把所有的临时文件全部删除了，只留下一个日志文件。初看这个日志文件，貌似与OpenSSL相关，因为日志的最后几行确实有OpenSSL的痕迹。但仔细查看日志，发现上面几行才是出错的真正原因，在日志中有类似下面的两行：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>也就是说下面的应该是正常输出，是因为上面出错了才停止的。造成编译错误的罪魁祸首是这两行上面的日志：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>2<span class="o">]</span>: Entering directory <span class="sb">`</span>/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline<span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">compiling readline.c</span>
+</span><span class='line'><span class="s1">readline.c: In function ‘Init_readline’:</span>
+</span><span class='line'><span class="s1">readline.c:1886:26: error: ‘Function’ undeclared (first use in this function)</span>
+</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
+</span><span class='line'><span class="s1">                          ^</span>
+</span><span class='line'><span class="s1">readline.c:1886:26: note: each undeclared identifier is reported only once for each function it appears in</span>
+</span><span class='line'><span class="s1">readline.c:1886:36: error: expected expression before ‘)’ token</span>
+</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
+</span><span class='line'><span class="s1">                                    ^</span>
+</span><span class='line'><span class="s1">readline.c: At top level:</span>
+</span><span class='line'><span class="s1">readline.c:530:1: warning: ‘readline_pre_input_hook’ defined but not used [-Wunused-function]</span>
+</span><span class='line'><span class="s1"> readline_pre_input_hook(void)</span>
+</span><span class='line'><span class="s1"> ^</span>
+</span><span class='line'><span class="s1">make[2]: *** [readline.o] 错误 1</span>
+</span><span class='line'><span class="s1">make[2]: Leaving directory `/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline&#39;</span>
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从上面的错误日志中可以发现，编译错误是在编译ext/readline/readline.c时，1886行的<code>Function</code>未声明造成的。上网搜索关键字<code>rbenv readline Function</code>，发现这还不是个别现象，应该算是ruby的一个BUG。问题的根本原因是ruby依赖的libreadline库从6.2升级到6.3时，将<code>Function</code>的typedef去掉了，但ruby使用libreadline的代码中还存在对<code>Function</code>的使用，因此就出现了符号未声明的编译错误。找到了问题的根源，修复的措施就简单了，使用libreadline新风格的typedef，将<code>Function</code>替换成<code>rl_hook_func_t</code>就行了。</p>
+
+<p>rbenv除了可以用<code>rbenv install</code>来自动编译安装ruby外，也可以手动编译，最后安装到<code>~/.rbenv/versions/</code>对应版本的目录中。比如2.1.1版本的ruby，在configure时添加<code>--prefix=~/.rbenv/versions/2.1.1</code>即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>./configure --prefix<span class="o">=</span>~/.rbenv/versions/2.1.1
+</span><span class='line'><span class="nv">$ </span>make
+</span><span class='line'><span class="nv">$ </span>make check
+</span><span class='line'><span class="nv">$ </span>make install
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在查找这一问题时，通过ruby的版本控制系统，还发现了一些比较有趣的东西。这才是本文的重点。:)
+Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有镜像版本库，提交日志是基本相同的。因为比较熟悉GitHub，下面描述的提交日志都来自GitHub。</p>
+
+<p>关于该问题的代码修改都在<a href="https://github.com/ruby/ruby/tree/trunk/ext/readline">ext/readline目录</a>中，看一下与该目录有关的<a href="https://github.com/ruby/ruby/commits/trunk/ext/readline">提交日志</a>，哇，从2014年3月1日到2014年4月4日，总共用了5次提交才比较好的修复了本问题。依次浏览这五次提交，看看到底是怎么会事儿。</p>
+
+<p>2014年3月1日，提交<a href="https://github.com/ruby/ruby/commit/ed6a2d3bf695c8781cd27b86c39c1151b57f36f4#diff-41839e3cfd5979f00c2a767307b6e0c6">ed6a2d3bf6</a>，修改了<code>ext/readline/readline.c</code>。修正方法与我上面描述的相同，就是把<code>Function</code>换成了<code>rl_hook_func_t</code>，貌似问题解决。</p>
+
+<p>2014年3月2日，前一天刚修复了BUG，怎么又有针对同一问题的提交，而且一天就提交了两次？第一次提交<a href="https://github.com/ruby/ruby/commit/2bb881148493651c577d95d55a4571c36de589b6#diff-41839e3cfd5979f00c2a767307b6e0c6">2bb8811484</a>，<code>rl_hook_func_t for old readline</code>。好吧，前一天的修改简单的改了类型名，没有考虑向前兼容老版本的readline，从提交信息看是这样的。修正方法也比较简单，就是判断一下有没有<code>rl_hook_func_t</code>这个类型，没有的话就通过宏定义将<code>rl_hook_func_t</code>替换成<code>Function</code>。第二次提交<a href="https://github.com/ruby/ruby/commit/083bf237596abd7b317bc891c5b6d766f299c62e#diff-41839e3cfd5979f00c2a767307b6e0c6">083bf23759</a>,添加了针对上一次提交的注释。难道是修改得太急，改了问题，忘了用注释解释一下？</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>+  <span class="c"># rl_hook_func_t is available since readline-4.2 (2001).</span>
+</span><span class='line'>+  <span class="c"># Function is removed at readline-6.3 (2014).</span>
+</span><span class='line'>+  <span class="c"># However, editline (NetBSD 6.1.3, 2014) doesn&#39;t have rl_hook_func_t.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>貌似是为了兼容NetBSD的editline库，那第一次提交里提到的for old readline就不太准确了。也就是说第二次提交可能是为了补救上一次提交出现的歧义。</p>
+
+<p>但仍然没有结束。2014年3月31日，提交<a href="https://github.com/ruby/ruby/commit/664813677963792e2ad36ef9370107dc41c7f27b#diff-41839e3cfd5979f00c2a767307b6e0c6">6648136779</a>，<code>fix typo</code>，哦，是<code>$defs</code>而不是<code>$DEFS</code>，但为什么过了将近一个月才发现？</p>
+
+<p>2014年4月4日，提交<a href="https://github.com/ruby/ruby/commit/d2a8e28597df946842f44d6e0d2cbfe98863b877#diff-41839e3cfd5979f00c2a767307b6e0c6">d2a8e28597</a>，不是检查<code>rl_hook_func_t</code>而应该检查<code>rl_hook_func_t*</code>。我的疑问与上一次提交一样，为什么过了一个月才发现？</p>
+
+<p>通过对这一系列提交的追溯，我们发现是不是有些似曾相识？在修正BUG的时候不小心又引入了新的BUG，然后再修正新BUG，然后因为匆忙修正的不彻底。类似这样的问题有很多，如何才能在开发过程中尽量避免？Ruby的代码是有单元测试的，但是在不同库版本、不同操作系统的环境中单元测试的结果可能是不同的。我猜测单元测试可能只在比较主流的环境中运行，相当于跳过了这些兼容的代码，因此也就没有及时发现问题，导致一个BUG花了一个月才彻底解决。</p>
+
+<p>PS：Ruby 2.1.2已经合并了这些修改，编译2.1.2不需要再手动修改代码。</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T21:22:00+08:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2013/12/30/remove-unnecessary-auto-start-services/" title="Previous Post: Debian禁用不必要的开机自启动服务">&laquo; Debian禁用不必要的开机自启动服务</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/30/remove-unnecessary-auto-start-services/">Debian禁用不必要的开机自启动服务</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/28/install-docker-and-build-an-image/">安装docker并手工构建一个image</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">metaprogramming ruby notes 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

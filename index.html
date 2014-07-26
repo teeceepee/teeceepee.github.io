@@ -1,0 +1,820 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。 原来曾经尝试过rbenv，感觉还不错， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div class="blog-index">
+  
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-05-19T21:22:00+08:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。</p>
+
+<p>原来曾经尝试过rbenv，感觉还不错，又听到过一些RVM负面的信息，所以决定还是从rbenv入手。rbenv的安装很简单，按照官网的README来就好。所有的文件都安装在 <code>~/.rbenv/</code>目录中，还是比较好管理的。当时做得比较急，安装完成就准备安装ruby，但是tab了半天也没出<code>install</code>这个子命令。咋回事儿？继续看README吧，原来把编译安装ruby的功能做成了插件，需要单独安装。安装好后，终于有<code>install</code>子命令了，挑个比较新的版本，走起。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rbenv install 2.1.1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当时的网速不太好，历尽千辛万苦，终于下载完了。解压、编译，然后等来的是一个编译错误。rbenv把所有的临时文件全部删除了，只留下一个日志文件。初看这个日志文件，貌似与OpenSSL相关，因为日志的最后几行确实有OpenSSL的痕迹。但仔细查看日志，发现上面几行才是出错的真正原因，在日志中有类似下面的两行：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>也就是说下面的应该是正常输出，是因为上面出错了才停止的。造成编译错误的罪魁祸首是这两行上面的日志：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>2<span class="o">]</span>: Entering directory <span class="sb">`</span>/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline<span class="s1">&#39;</span>
+</span><span class='line'><span class="s1">compiling readline.c</span>
+</span><span class='line'><span class="s1">readline.c: In function ‘Init_readline’:</span>
+</span><span class='line'><span class="s1">readline.c:1886:26: error: ‘Function’ undeclared (first use in this function)</span>
+</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
+</span><span class='line'><span class="s1">                          ^</span>
+</span><span class='line'><span class="s1">readline.c:1886:26: note: each undeclared identifier is reported only once for each function it appears in</span>
+</span><span class='line'><span class="s1">readline.c:1886:36: error: expected expression before ‘)’ token</span>
+</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
+</span><span class='line'><span class="s1">                                    ^</span>
+</span><span class='line'><span class="s1">readline.c: At top level:</span>
+</span><span class='line'><span class="s1">readline.c:530:1: warning: ‘readline_pre_input_hook’ defined but not used [-Wunused-function]</span>
+</span><span class='line'><span class="s1"> readline_pre_input_hook(void)</span>
+</span><span class='line'><span class="s1"> ^</span>
+</span><span class='line'><span class="s1">make[2]: *** [readline.o] 错误 1</span>
+</span><span class='line'><span class="s1">make[2]: Leaving directory `/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline&#39;</span>
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
+</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从上面的错误日志中可以发现，编译错误是在编译ext/readline/readline.c时，1886行的<code>Function</code>未声明造成的。上网搜索关键字<code>rbenv readline Function</code>，发现这还不是个别现象，应该算是ruby的一个BUG。问题的根本原因是ruby依赖的libreadline库从6.2升级到6.3时，将<code>Function</code>的typedef去掉了，但ruby使用libreadline的代码中还存在对<code>Function</code>的使用，因此就出现了符号未声明的编译错误。找到了问题的根源，修复的措施就简单了，使用libreadline新风格的typedef，将<code>Function</code>替换成<code>rl_hook_func_t</code>就行了。</p>
+
+<p>rbenv除了可以用<code>rbenv install</code>来自动编译安装ruby外，也可以手动编译，最后安装到<code>~/.rbenv/versions/</code>对应版本的目录中。比如2.1.1版本的ruby，在configure时添加<code>--prefix=~/.rbenv/versions/2.1.1</code>即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>./configure --prefix<span class="o">=</span>~/.rbenv/versions/2.1.1
+</span><span class='line'><span class="nv">$ </span>make
+</span><span class='line'><span class="nv">$ </span>make check
+</span><span class='line'><span class="nv">$ </span>make install
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在查找这一问题时，通过ruby的版本控制系统，还发现了一些比较有趣的东西。这才是本文的重点。:)
+Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有镜像版本库，提交日志是基本相同的。因为比较熟悉GitHub，下面描述的提交日志都来自GitHub。</p>
+
+<p>关于该问题的代码修改都在<a href="https://github.com/ruby/ruby/tree/trunk/ext/readline">ext/readline目录</a>中，看一下与该目录有关的<a href="https://github.com/ruby/ruby/commits/trunk/ext/readline">提交日志</a>，哇，从2014年3月1日到2014年4月4日，总共用了5次提交才比较好的修复了本问题。依次浏览这五次提交，看看到底是怎么会事儿。</p>
+
+<p>2014年3月1日，提交<a href="https://github.com/ruby/ruby/commit/ed6a2d3bf695c8781cd27b86c39c1151b57f36f4#diff-41839e3cfd5979f00c2a767307b6e0c6">ed6a2d3bf6</a>，修改了<code>ext/readline/readline.c</code>。修正方法与我上面描述的相同，就是把<code>Function</code>换成了<code>rl_hook_func_t</code>，貌似问题解决。</p>
+
+<p>2014年3月2日，前一天刚修复了BUG，怎么又有针对同一问题的提交，而且一天就提交了两次？第一次提交<a href="https://github.com/ruby/ruby/commit/2bb881148493651c577d95d55a4571c36de589b6#diff-41839e3cfd5979f00c2a767307b6e0c6">2bb8811484</a>，<code>rl_hook_func_t for old readline</code>。好吧，前一天的修改简单的改了类型名，没有考虑向前兼容老版本的readline，从提交信息看是这样的。修正方法也比较简单，就是判断一下有没有<code>rl_hook_func_t</code>这个类型，没有的话就通过宏定义将<code>rl_hook_func_t</code>替换成<code>Function</code>。第二次提交<a href="https://github.com/ruby/ruby/commit/083bf237596abd7b317bc891c5b6d766f299c62e#diff-41839e3cfd5979f00c2a767307b6e0c6">083bf23759</a>,添加了针对上一次提交的注释。难道是修改得太急，改了问题，忘了用注释解释一下？</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>+  <span class="c"># rl_hook_func_t is available since readline-4.2 (2001).</span>
+</span><span class='line'>+  <span class="c"># Function is removed at readline-6.3 (2014).</span>
+</span><span class='line'>+  <span class="c"># However, editline (NetBSD 6.1.3, 2014) doesn&#39;t have rl_hook_func_t.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>貌似是为了兼容NetBSD的editline库，那第一次提交里提到的for old readline就不太准确了。也就是说第二次提交可能是为了补救上一次提交出现的歧义。</p>
+
+<p>但仍然没有结束。2014年3月31日，提交<a href="https://github.com/ruby/ruby/commit/664813677963792e2ad36ef9370107dc41c7f27b#diff-41839e3cfd5979f00c2a767307b6e0c6">6648136779</a>，<code>fix typo</code>，哦，是<code>$defs</code>而不是<code>$DEFS</code>，但为什么过了将近一个月才发现？</p>
+
+<p>2014年4月4日，提交<a href="https://github.com/ruby/ruby/commit/d2a8e28597df946842f44d6e0d2cbfe98863b877#diff-41839e3cfd5979f00c2a767307b6e0c6">d2a8e28597</a>，不是检查<code>rl_hook_func_t</code>而应该检查<code>rl_hook_func_t*</code>。我的疑问与上一次提交一样，为什么过了一个月才发现？</p>
+
+<p>通过对这一系列提交的追溯，我们发现是不是有些似曾相识？在修正BUG的时候不小心又引入了新的BUG，然后再修正新BUG，然后因为匆忙修正的不彻底。类似这样的问题有很多，如何才能在开发过程中尽量避免？Ruby的代码是有单元测试的，但是在不同库版本、不同操作系统的环境中单元测试的结果可能是不同的。我猜测单元测试可能只在比较主流的环境中运行，相当于跳过了这些兼容的代码，因此也就没有及时发现问题，导致一个BUG花了一个月才彻底解决。</p>
+
+<p>PS：Ruby 2.1.2已经合并了这些修改，编译2.1.2不需要再手动修改代码。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/30/remove-unnecessary-auto-start-services/">Debian禁用不必要的开机自启动服务</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。Debian有一个命令，但是每次改都要现查，老是记不住。写一篇博客加深一下印象吧。</p>
+
+<p>这个命令是<code>update-rc.d</code>，看名字就知道是修改rc?.d的。根据<code>man update-rc.d</code>，用法如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> <span class="o">[</span>-f<span class="o">]</span> name remove
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name defaults
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name
+</span><span class='line'>
+</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name disable|enable <span class="o">[</span> S|2|3|4|5 <span class="o">]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用到的是最后一个，如果最后面的运行级别不指定则修改所有级别。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># 禁止Redis开机启动</span>
+</span><span class='line'>sudo update-rc.d redis-server disable
+</span><span class='line'><span class="c"># Redis开机启动</span>
+</span><span class='line'>sudo update-rc.d redis-server <span class="nb">enable</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>写这篇博客时顺便学会了一个查看所有服务运行状态的命令，+表示正在运行，-表示没有运行，?表示不详（？），可能是不支持用status查询状态吧。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service --status-all
+</span><span class='line'><span class="c"># ==&gt;</span>
+</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpi-fakekey
+</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  acpi-support
+</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpid
+</span><span class='line'> <span class="o">[</span> ? <span class="o">]</span>  alsa-utils
+</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  anacron
+</span><span class='line'>...
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/28/install-docker-and-build-an-image/">安装docker并手工构建一个image</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-28T20:40:00+08:00" pubdate data-updated="true">Dec 28<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>最近貌似docker这玩意儿比较火，有可能是虚拟化的新趋势。比较感兴趣，正好有时间就玩了玩，遇到一些问题就记下来了。</p>
+
+<p><a href="https://www.docker.io">docker</a>的官网做得不错，对于新手能很方便的找到所需信息。最让人喜欢的是那个<a href="https://www.docker.io/gettingstarted/">Get started!</a>交互式命令行教程，简直就是“手把手得教，一对一得学”。通过<code>docker version</code>、<code>docker search tutorial</code>等一步步深入，看完教程就能熟悉个大概了。</p>
+
+<p>首先是安装docker。我的系统是Debian unstable，官方有Ubuntu的安装教程，我是按照Ubuntu的教程来的，但是并没有执行<code>sudo apt-get install linux-image-extra-\</code>uname -r&#8220;，因为Debian貌似没有linux-image-extra-*这个软件包。安装docker只用下面几行命令即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo sh -c <span class="s2">&quot;wget -qO- https://get.docker.io/gpg | apt-key add -&quot;</span>
+</span><span class='line'>
+</span><span class='line'>sudo sh -c <span class="s2">&quot;echo deb http://get.docker.io/ubuntu docker main &gt; /etc/apt/sources.list.d/docker.list&quot;</span>
+</span><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install lxc-docker
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>安装好docker我就按<a href="https://www.docker.io/gettingstarted/">Get started!</a>的命令操作，但不凑巧的是我在本机执行这些命令时可没有在线教程那么顺利，<code>docker pull ubuntu</code>并不能正常下载image，卡了一会儿输出个错误，超时了。原因猜也能猜个差不多，只能说句“F*K GFW”然后找其他办法了。还好我有个VPN，连上VPN，再试，结果还是不行，错误信息和不连VPN的还不太一样，具体原因还不清楚，再找其他解决方案吧。最终在一篇<a href="http://www.blogjava.net/yongboy/archive/2013/12/12/407498.html">博客</a>的评论里找到了一种解决方案，有一点麻烦，但确实可行。</p>
+
+<p>这个解决方案就是自己在本地构建一个image，然后导入到docker中，最终就和用<code>docker pull</code>从远程下载的效果一样了。该方案只能在Debian或Ubuntu上操作，制作的image也只能是Debian或Ubuntu。</p>
+
+<p>首先，确认已经安装了<code>debootstrap</code>这个工具，如果没安装用下面命令安装。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install debootstrap
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>debootstrap</code>貌似是一个构建Debian系统的工具，可以从指定的源获取deb安装包并安装。过程应该和安装系统差不多，只不过是将文件都安装到某一个目录下。根据<code>man debootstrap</code>，用法如下，用一句话解释就是：&#8221;debootstrap  bootstraps a basic Debian system of SUITE into TARGET from MIRROR by running SCRIPT.&#8221;</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>debootstrap <span class="o">[</span>OPTION...<span class="o">]</span>  SUITE TARGET <span class="o">[</span>MIRROR <span class="o">[</span>SCRIPT<span class="o">]]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>TARGET</code>这里应该是写一个路径，最终构建的系统就在这个路径中。如果该路径不存在会自动创建。</p>
+
+<p><code>MIRROR</code>指定deb包的获取路径，与<code>sources.list</code>文件中写的路径一样，比如<code>http://mirrors.sohu.com/ubuntu/</code></p>
+
+<p><code>SUITE</code>是一个名字，起初我以为可以随便写，经过测试发现必须与<code>/usr/share/debootstrap/scripts/</code>目录中的文件名对应，并且需要与MIRROR对应，下面有说明。在我的机器上这个目录有如下内容：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ls /usr/share/debootstrap/scripts/
+</span><span class='line'>breezy            intrepid          potato            stable
+</span><span class='line'>dapper            jaunty            precise           testing
+</span><span class='line'>edgy              jessie            quantal           trusty
+</span><span class='line'>etch              karmic            raring            unstable
+</span><span class='line'>etch-m68k         lenny             sarge             warty
+</span><span class='line'>feisty            lucid             sarge.buildd      warty.buildd
+</span><span class='line'>gutsy             maverick          sarge.fakechroot  wheezy
+</span><span class='line'>hardy             natty             saucy             woody
+</span><span class='line'>hoary             oldstable         sid               woody.buildd
+</span><span class='line'>hoary.buildd      oneiric           squeeze
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>显然，<code>SUITE</code>这一项只能写Debian或Ubuntu的代号。否则错误提示为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo debootstrap abc target http://mirrors.sohu.com/ubuntu
+</span><span class='line'>E: No such script: /usr/share/debootstrap/scripts/abc
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>但只满足了本机的要求也不够，如果该suite在MIRROR对应源中不存在也无法执行，毕竟源中没有对应版本的deb包那什么也干不了。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo debootstrap karmic target http://mirrors.sohu.com/ubuntu
+</span><span class='line'>I: Retrieving Release
+</span><span class='line'>E: Failed getting release file http://mirrors.sohu.com/ubuntu/dists/karmic/Release
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例子，从<a href="http://mirrors.sohu.com/ubuntu">http://mirrors.sohu.com/ubuntu</a>下载并构建Ubuntu saucy 13.10，存放在<code>./saucy</code>中：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Example:</span>
+</span><span class='line'>sudo debootstrap saucy ./saucy http://mirrors.sohu.com/ubuntu
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>构建好系统就可以用tar打包了。需要注意的是路径问题，要保证tar包里面的/目录要对应上面的TARGET目录。简单的办法就是先进入TARGET目录，再执行tar命令：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">cd</span> ./saucy
+</span><span class='line'>tar -cf ../ubuntu-saucy.tar .
+</span><span class='line'><span class="nb">cd</span> ..
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>有了tar包就可以导入到docker中了，用以下命令导入：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>cat ./ubuntu-saucy.tar | sudo docker import - saucy
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>docker的import子命令接受两种形式的参数，一种是URL，另一种是标准输入。上面的命令中的短横杠<code>-</code>表示从标准输入导入，<code>saucy</code>是给这个image起的名字，类似<code>learn/tutorial</code>、<code>ubuntu</code>。因为要从标准输入导入，所以用cat命令将tar包内容输出到标准输出，再用管道连到docker的标准输入。</p>
+
+<p>到这儿就完成了，可以试用一下刚导入的image</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo docker run -i -t saucy cat /etc/issue
+</span><span class='line'>WARNING: IPv4 forwarding is disabled.
+</span><span class='line'>Ubuntu 13.10 <span class="se">\n</span> <span class="se">\l</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后一行就是image的输出。</p>
+
+<p>最后再说一遍“F*K GFW”，搞这么多就为了替代<code>docker pull</code>一行命令。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">Metaprogramming Ruby Notes 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-19T13:55:00+08:00" pubdate data-updated="true">Jul 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>这些天在看<a href="http://book.douban.com/">《ruby元编程》</a>。其中有一个关于block的小测验，要模仿C#中的using关键字。</p>
+
+<p>在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试，但是仔细研究发现书中实现的using貌似有些问题，而且是大问题。实现using的目的在于在block中使用资源，使用完毕后自动将资源释放。因此using后面的block一定有一个参数代表资源，using的实现也应该将资源传递给block，所以正确的实现应该如下。</p>
+
+<figure class='code'><figcaption><span>using.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Kernel</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">yield</span> <span class="n">resource</span>
+</span><span class='line'>  <span class="k">ensure</span>
+</span><span class='line'>    <span class="n">resource</span><span class="o">.</span><span class="n">dispose</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>书中的实现在<code>yield</code>后没有resource，无法将资源传递给block。不能在block中使用资源，写这玩意儿有啥用？我看的版本是中文版，不清楚原版是否也有这个错误。另外，书中使用的是<code>begin ... ensure ... end</code>，在用<code>def</code>定义方法时<code>begin</code>是可以省略的。</p>
+
+<p>之所以会出现这个问题，我认为是单元测试的用例写的不够严格。下面是与书中原测试等价的测试用例。</p>
+
+<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;test/unit&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./using.rb&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Resource</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dispose</span>
+</span><span class='line'>    <span class="vi">@dispose</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">disposed?</span>
+</span><span class='line'>    <span class="vi">@dispose</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestUsing</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">setup</span>
+</span><span class='line'>    <span class="vi">@r</span> <span class="o">=</span> <span class="no">Resource</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources</span>
+</span><span class='line'>    <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources_in_case_of_exception</span>
+</span><span class='line'>    <span class="n">assert_raises</span><span class="p">(</span><span class="no">Exception</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="no">Exception</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到，两个测试在block中都没有使用资源。测试的不严谨导致了这个using的大bug。至少应该再添加一个测试，比如：</p>
+
+<figure class='code'><figcaption><span>using_test_add.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_with_block_argument</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>添加这个测试后，书中原代码会无法通过测试，因此可以发现这一bug。</p>
+
+<h1>后记</h1>
+
+<p>刚写完上面的，正在想怎么总结结尾的时候，一个想法忽然在脑海中闪现出来：我是否真的理解了书中设计的using的用法。按照我自己的想法，using的参数是一个实现了dispose方法的资源，后面的block是单形参的。这样using将资源传递给block，在block中使用形参代表资源。后来想了想，using后面的block其实也可以访问到外面的资源，没有必要设置一个参数来传递资源。比如：</p>
+
+<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_using</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># something using @r</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>    <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>改完测试，运行通过，那这篇博文怎么办&#8230;
+删还是不删，这是一个问题&#8230;</p>
+
+<h1>后记的后记</h1>
+
+<p>终于想出一个不用删掉这篇文章的理由，那就是通过参数传递资源的方式要灵活那么一点。书上的写法因为没有使用参数，所以using后的block必须定义在要立即使用资源的地方，当然C#中的using大约也是这样使用的。但如果资源是通过block的参数传递的，那么这个block就可以通过 <code>Proc.new</code> 或者 <code>lambda</code> 定义在任何地方。比如：</p>
+
+<figure class='code'><figcaption><span>using_define_anywhere.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_define_anywhere</span>
+</span><span class='line'>  <span class="nb">p</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">p</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-13T22:12:00+08:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>前几天更新了一下debian系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现xfce的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google这个问题后在xfce官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
+
+<p><a href="http://www.xfce.org/about/tour?lang=zh_CN">xfce</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/06/03/ruby-stringscanner/">Ruby StringScanner</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-06-03T20:09:00+08:00" pubdate data-updated="true">Jun 3<span>rd</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个scanner，后来发现Ruby库中有一个StringScanner类，但不是用Ruby写的，不能做源码浏览了。在这里记录一下StringScanner的用法。</p>
+
+<h1>&lt;b> strscan &lt;/b></h1>
+
+<p>要用StringScanner类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
+
+<p>按照StringScanner<a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个position变量，使得每次扫描都从position开始而不是开头。</p>
+
+<h1>常用方法</h1>
+
+<p><code>StringScanner.new</code> 构造一个StringScanner对象，参数是待扫描的字符串。</p>
+
+<figure class='code'><figcaption><span>StringScanner.new</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;(+ a 2)&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>StringScanner#eos?</code> 判断是否扫描完毕。</p>
+
+<p><code>StringScanner#scan</code> 参数pattern为一个正则表达式，尝试从当前位置与pattern匹配，如果成功那么scanner前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
+
+<figure class='code'><figcaption><span>StringScanner#scan</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;test string&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot;test&quot;</span>
+</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; nil</span>
+</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\s+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot; &quot;</span>
+</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot;string&quot;</span>
+</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/./</span><span class="p">)</span>     <span class="c1"># -&gt; nil</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>StringScanner#peek</code> 接受一个数字类型的参数len，返回string[pos, len]，也就是即将被扫描的字符串，不推进扫描指针。</p>
+
+<p><code>StringScanner#check</code> 与 <code>scan</code> 类似，但是不推进扫描指针。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  <div class="pagination">
+    
+    <a href="/blog/archives">Blog Archives</a>
+    
+  </div>
+</div>
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/30/remove-unnecessary-auto-start-services/">Debian禁用不必要的开机自启动服务</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/12/28/install-docker-and-build-an-image/">安装docker并手工构建一个image</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">metaprogramming ruby notes 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2014 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
