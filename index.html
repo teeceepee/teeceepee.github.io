@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。 原来曾经尝试过rbenv，感觉还不错， &hellip;">
+  <meta name="description" content="Ruby on Rails框架的Active Support组件提供了很多方便使用的方法，有些方法是通过Monkey Patch的方式添加到Ruby原有的类中的。 Object#blank? 只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到Object类， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -63,6 +63,147 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/11/15/explore-active-support-1/">Explore Active Support 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-11-15T20:57:00+08:00" pubdate data-updated="true">Nov 15<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Ruby on Rails框架的Active Support组件提供了很多方便使用的方法，有些方法是通过Monkey Patch的方式添加到Ruby原有的类中的。</p>
+
+<h2>Object#blank?</h2>
+
+<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到Object类，还添加到了NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash等类中。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/core_ext/object/blank.rb</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Object</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
+</span><span class='line'>    <span class="nb">respond_to?</span><span class="p">(</span><span class="ss">:empty?</span><span class="p">)</span> <span class="p">?</span> <span class="o">!!</span><span class="n">empty?</span> <span class="p">:</span> <span class="o">!</span><span class="nb">self</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">String</span>
+</span><span class='line'>  <span class="no">BLANK_RE</span> <span class="o">=</span> <span class="sr">/\A[[:space:]]*\z/</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
+</span><span class='line'>    <span class="no">BLANK_RE</span> <span class="o">===</span> <span class="nb">self</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>判断一个对象是否是空白的。空白的定义是如果一个对象是false，empty或空白字符，那么就是空白的。比较的特殊的是对String类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持Unicode的空白字符。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">blank?</span>       <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s1">&#39;   &#39;</span><span class="o">.</span><span class="n">blank?</span>    <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s2">&quot;</span><span class="se">\t\n\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s1">&#39; blah &#39;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; false</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Unicode whitespace is supported:</span>
+</span><span class='line'><span class="s2">&quot;\u00a0&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>所有的数字都不是空白的，因为向Numeric类添加的blank?方法永远返回false。</p>
+
+<h2>Object#present?</h2>
+
+<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回true。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">present?</span>
+</span><span class='line'>  <span class="o">!</span><span class="n">blank?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>ActiveSupport::HashWithIndifferentAccess</h2>
+
+<p>随着Ruby版本的发展，String和Symbol对象的差别越来越小，在Ruby和Rails中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是Hash的键。<code>:foo.hash != 'foo'.hash</code>，Active Support中得HashWithIndifferentAccess类就是解决这个问题的。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/hash_with_indifferent_access.rb</span>
+</span><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:HashWithIndifferentAccess</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#000000&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#000000&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;black&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#000000&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#FFFFFF&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:white</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的Hash对象转化。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">black</span><span class="p">:</span> <span class="s1">&#39;#000000&#39;</span><span class="p">,</span> <span class="ss">white</span><span class="p">:</span> <span class="s1">&#39;#FFFFFF&#39;</span> <span class="p">}</span><span class="o">.</span><span class="n">with_indifferent_access</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>算是短一点了。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -770,6 +911,10 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2014/11/15/explore-active-support-1/">explore active support 1</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a>
       </li>
     
@@ -783,10 +928,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     
       <li class="post">
         <a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">metaprogramming ruby notes 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a>
       </li>
     
   </ul>

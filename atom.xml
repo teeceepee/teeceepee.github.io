@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2014-07-26T12:06:59+08:00</updated>
+  <updated>2014-11-15T22:24:47+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,120 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[explore active support 1]]></title>
+    <link href="http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1/"/>
+    <updated>2014-11-15T20:57:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1</id>
+    <content type="html"><![CDATA[<p>Ruby on Rails框架的Active Support组件提供了很多方便使用的方法，有些方法是通过Monkey Patch的方式添加到Ruby原有的类中的。</p>
+
+<h2>Object#blank?</h2>
+
+<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到Object类，还添加到了NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash等类中。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/core_ext/object/blank.rb</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">Object</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
+</span><span class='line'>    <span class="nb">respond_to?</span><span class="p">(</span><span class="ss">:empty?</span><span class="p">)</span> <span class="p">?</span> <span class="o">!!</span><span class="n">empty?</span> <span class="p">:</span> <span class="o">!</span><span class="nb">self</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">String</span>
+</span><span class='line'>  <span class="no">BLANK_RE</span> <span class="o">=</span> <span class="sr">/\A[[:space:]]*\z/</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
+</span><span class='line'>    <span class="no">BLANK_RE</span> <span class="o">===</span> <span class="nb">self</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>判断一个对象是否是空白的。空白的定义是如果一个对象是false，empty或空白字符，那么就是空白的。比较的特殊的是对String类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持Unicode的空白字符。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">blank?</span>       <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s1">&#39;   &#39;</span><span class="o">.</span><span class="n">blank?</span>    <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s2">&quot;</span><span class="se">\t\n\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
+</span><span class='line'><span class="s1">&#39; blah &#39;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; false</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># Unicode whitespace is supported:</span>
+</span><span class='line'><span class="s2">&quot;\u00a0&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>所有的数字都不是空白的，因为向Numeric类添加的blank?方法永远返回false。</p>
+
+<h2>Object#present?</h2>
+
+<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回true。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">present?</span>
+</span><span class='line'>  <span class="o">!</span><span class="n">blank?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>ActiveSupport::HashWithIndifferentAccess</h2>
+
+<p>随着Ruby版本的发展，String和Symbol对象的差别越来越小，在Ruby和Rails中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是Hash的键。<code>:foo.hash != 'foo'.hash</code>，Active Support中得HashWithIndifferentAccess类就是解决这个问题的。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/hash_with_indifferent_access.rb</span>
+</span><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:HashWithIndifferentAccess</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#000000&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#000000&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;black&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#000000&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#FFFFFF&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:white</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
+</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的Hash对象转化。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">black</span><span class="p">:</span> <span class="s1">&#39;#000000&#39;</span><span class="p">,</span> <span class="ss">white</span><span class="p">:</span> <span class="s1">&#39;#FFFFFF&#39;</span> <span class="p">}</span><span class="o">.</span><span class="n">with_indifferent_access</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>算是短一点了。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[使用libreadline6.3编译Ruby]]></title>

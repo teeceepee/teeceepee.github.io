@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: active_support | Why Y]]></title>
+  <link href="http://teeceepee.github.com/blog/categories/active-support/atom.xml" rel="self"/>
+  <link href="http://teeceepee.github.com/"/>
+  <updated>2014-11-15T22:24:47+08:00</updated>
+  <id>http://teeceepee.github.com/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[explore active support 1]]></title>
+    <link href="http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1/"/>
+    <updated>2014-11-15T20:57:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1</id>
+    <content type="html"><![CDATA[<p>Ruby on Rails框架的Active Support组件提供了很多方便使用的方法，有些方法是通过Monkey Patch的方式添加到Ruby原有的类中的。</p>
+
+<h2>Object#blank?</h2>
+
+<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到Object类，还添加到了NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash等类中。
+``` ruby</p>
+
+<h1>File activesupport/lib/active_support/core_ext/object/blank.rb</h1>
+
+<p>class Object
+  def blank?</p>
+
+<pre><code>respond_to?(:empty?) ? !!empty? : !self
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>class String
+  BLANK_RE = /\A[[:space:]]*\z/</p>
+
+<p>  def blank?</p>
+
+<pre><code>BLANK_RE === self
+</code></pre>
+
+<p>  end
+end</p>
+
+<p>```</p>
+
+<p>判断一个对象是否是空白的。空白的定义是如果一个对象是false，empty或空白字符，那么就是空白的。比较的特殊的是对String类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持Unicode的空白字符。</p>
+
+<p>``` ruby
+''.blank?       # => true
+'   '.blank?    # => true
+"\t\n\r".blank? # => true
+' blah '.blank? # => false</p>
+
+<h1>Unicode whitespace is supported:</h1>
+
+<p>"\u00a0".blank? # => true
+```</p>
+
+<p>所有的数字都不是空白的，因为向Numeric类添加的blank?方法永远返回false。</p>
+
+<h2>Object#present?</h2>
+
+<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回true。</p>
+
+<p><code>ruby
+def present?
+  !blank?
+end
+</code></p>
+
+<h2>ActiveSupport::HashWithIndifferentAccess</h2>
+
+<p>随着Ruby版本的发展，String和Symbol对象的差别越来越小，在Ruby和Rails中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是Hash的键。<code>:foo.hash != 'foo'.hash</code>，Active Support中得HashWithIndifferentAccess类就是解决这个问题的。</p>
+
+<p>``` ruby</p>
+
+<h1>File activesupport/lib/active_support/hash_with_indifferent_access.rb</h1>
+
+<p>rgb = ActiveSupport::HashWithIndifferentAccess.new</p>
+
+<p>rgb[:black] = '#000000'
+rgb[:black]  # => '#000000'
+rgb['black'] # => '#000000'</p>
+
+<p>rgb['white'] = '#FFFFFF'
+rgb[:white]  # => '#FFFFFF'
+rgb['white'] # => '#FFFFFF'
+```</p>
+
+<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的Hash对象转化。</p>
+
+<p><code>ruby
+rgb = { black: '#000000', white: '#FFFFFF' }.with_indifferent_access
+</code>
+算是短一点了。</p>
+]]></content>
+  </entry>
+  
+</feed>
