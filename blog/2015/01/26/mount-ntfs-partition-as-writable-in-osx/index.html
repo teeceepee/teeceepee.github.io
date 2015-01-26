@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Xfce桌面按钮扩展 - Why Y</title>
+  <title>OSX 中挂载 NTFS 分区 - Why Y</title>
   <meta name="author" content="">
 
   
-  <meta name="description" content="前几天更新了一下debian系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现xfce的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的， &hellip;">
+  <meta name="description" content="我的移动硬盘是在用 Mac 之前买的，格式化为 NTFS 格式，可以在 Windows 和 Linux 中正常使用。换用 Mac 后，一开始只是从移动硬盘中读文件，没发觉有什么问题，一度以为网上说的 OSX 不支持 NTFS 的说法是针对老版本。直到又一次想要向移动硬盘中存文件， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://teeceepee.github.com/blog/2013/06/13/xfce-windowbutton">
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
@@ -66,7 +66,7 @@
   
   <header>
     
-      <h1 class="entry-title">Xfce桌面按钮扩展</h1>
+      <h1 class="entry-title">OSX 中挂载 NTFS 分区</h1>
     
     
       <p class="meta">
@@ -82,16 +82,25 @@
   
 
 
-<time datetime="2013-06-13T22:12:00+08:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
+<time datetime="2015-01-26T22:29:00+08:00" pubdate data-updated="true">Jan 26<span>th</span>, 2015</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>前几天更新了一下debian系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现xfce的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google这个问题后在xfce官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
+<div class="entry-content"><p>我的移动硬盘是在用 Mac 之前买的，格式化为 NTFS 格式，可以在 Windows 和 Linux 中正常使用。换用 Mac 后，一开始只是从移动硬盘中读文件，没发觉有什么问题，一度以为网上说的 OSX 不支持 NTFS 的说法是针对老版本。直到又一次想要向移动硬盘中存文件，发现连新建目录都不行，这才了解到 OSX 默认把 NTFS 分区挂载为只读。</p>
 
-<p><a href="http://www.xfce.org/about/tour?lang=zh_CN">xfce</a></p>
+<p>原来 OSX 从 Snow Leopard 开始就内置了对 NTFS 分区的读写支持，但是默认将 NTFS 分区挂载为只读分区，具体原因不详。既然是内置读写支持，那就有办法将 NTFS 分区挂载为可读可写的分区。</p>
+
+<p>实现这个功能的命令是 <code>/sbin/mount_ntfs</code>，系统在实现移动硬盘自动挂载功能时也是间接使用该命令，所以网上有修改该文件来实现自动挂载为可读可写分区的方法。个人觉得修改系统原文件不是一个很好的方法，没有采用。不过也学到了使用该命令的方法。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mount_ntfs -o rw,nobrowse DEVICE MOUNT_POINT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中 <code>DEVICE</code> 是硬盘分区对应的设备文件， 比如 <code>/dev/disk2s1</code>，<code>MOUNT_POINT</code> 是挂载点，比如 <code>/Volumes/data</code>。通过 <code>-o rw,nobrowse</code> 这样的参数，可以将 NTFS 分区挂载为可读可写分区，其中的 <code>rw</code> 顾名思义，<code>nobrowse</code> 表示不在桌面和 Finder 中显示。不在桌面和 Finder 中显示很不方便，于是尝试只是用 <code>-o rw</code> 这样的参数，挂载的分区出现在了桌面和 Finder中，但是依然是只读分区，尝试失败。可能是系统做了限制，挂载为可读可写分区时不允许在桌面和 Finder 中显示。目前我的做法是将 <code>/Volumes</code> 目录放到 Finder 的个人收藏中，然后手动挂载分区到这个目录下的某个子目录。</p>
 </div>
 
 
@@ -114,8 +123,14 @@
   
 
 
-<time datetime="2013-06-13T22:12:00+08:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
+<time datetime="2015-01-26T22:29:00+08:00" pubdate data-updated="true">Jan 26<span>th</span>, 2015</time>
       
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/osx/'>OSX</a>
+  
+</span>
 
 
     </p>
@@ -129,10 +144,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/06/03/ruby-stringscanner/" title="Previous Post: Ruby StringScanner">&laquo; Ruby StringScanner</a>
+        <a class="basic-alignment left" href="/blog/2014/12/06/install-emacs-on-osx/" title="Previous Post: Install Emacs on OSX">&laquo; Install Emacs on OSX</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2013/07/19/metaprogramming-ruby-notes-1/" title="Next Post: metaprogramming ruby notes 1">metaprogramming ruby notes 1 &raquo;</a>
       
     </p>
   </footer>

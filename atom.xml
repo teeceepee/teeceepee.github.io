@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2014-12-06T17:53:38+08:00</updated>
+  <updated>2015-01-26T23:04:45+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,26 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[OSX 中挂载 NTFS 分区]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx/"/>
+    <updated>2015-01-26T22:29:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx</id>
+    <content type="html"><![CDATA[<p>我的移动硬盘是在用 Mac 之前买的，格式化为 NTFS 格式，可以在 Windows 和 Linux 中正常使用。换用 Mac 后，一开始只是从移动硬盘中读文件，没发觉有什么问题，一度以为网上说的 OSX 不支持 NTFS 的说法是针对老版本。直到又一次想要向移动硬盘中存文件，发现连新建目录都不行，这才了解到 OSX 默认把 NTFS 分区挂载为只读。</p>
+
+<p>原来 OSX 从 Snow Leopard 开始就内置了对 NTFS 分区的读写支持，但是默认将 NTFS 分区挂载为只读分区，具体原因不详。既然是内置读写支持，那就有办法将 NTFS 分区挂载为可读可写的分区。</p>
+
+<p>实现这个功能的命令是 <code>/sbin/mount_ntfs</code>，系统在实现移动硬盘自动挂载功能时也是间接使用该命令，所以网上有修改该文件来实现自动挂载为可读可写分区的方法。个人觉得修改系统原文件不是一个很好的方法，没有采用。不过也学到了使用该命令的方法。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mount_ntfs -o rw,nobrowse DEVICE MOUNT_POINT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中 <code>DEVICE</code> 是硬盘分区对应的设备文件， 比如 <code>/dev/disk2s1</code>，<code>MOUNT_POINT</code> 是挂载点，比如 <code>/Volumes/data</code>。通过 <code>-o rw,nobrowse</code> 这样的参数，可以将 NTFS 分区挂载为可读可写分区，其中的 <code>rw</code> 顾名思义，<code>nobrowse</code> 表示不在桌面和 Finder 中显示。不在桌面和 Finder 中显示很不方便，于是尝试只是用 <code>-o rw</code> 这样的参数，挂载的分区出现在了桌面和 Finder中，但是依然是只读分区，尝试失败。可能是系统做了限制，挂载为可读可写分区时不允许在桌面和 Finder 中显示。目前我的做法是将 <code>/Volumes</code> 目录放到 Finder 的个人收藏中，然后手动挂载分区到这个目录下的某个子目录。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Install Emacs on OSX]]></title>
