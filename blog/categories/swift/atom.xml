@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: swift | Why Y]]></title>
+  <link href="http://teeceepee.github.com/blog/categories/swift/atom.xml" rel="self"/>
+  <link href="http://teeceepee.github.com/"/>
+  <updated>2015-02-14T22:25:58+08:00</updated>
+  <id>http://teeceepee.github.com/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[A Swift Tour 笔记]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/02/06/a-swift-tour-note/"/>
+    <updated>2015-02-06T23:06:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/02/06/a-swift-tour-note</id>
+    <content type="html"><![CDATA[<p>最近看完了 The Swift Programming Language 中的 A Swift Tour 一节，对 Swift 有了一点初步的了解，在此记录一下学习过程中遇到的一些问题。</p>
+
+<h2>可变参数列表</h2>
+
+<p>Swift 的函数可以接受多个参数，把它们收集到一个数组中。这本来应该是一个不错的语言特性，但是在写对应的 experiment 时就发现问题了，Swift 只能把多个参数收集到数组中，却不能将一个数组打散成多个参数。Ruby 中可以用 <code>sumOf(*numbers)</code> 这样的方式实现将数据打散成多个参数，Swift 目前没有这样的功能，所以无法用下面的代码实现 <code>average</code> 函数。如果实在想用 <code>sumOf</code> 函数来实现 <code>average</code>，那只能将 <code>sumOf</code> 的参数改为数组类型的。只能期待Swift能在以后实现这样的功能了，目前来说尽量少用这样的蹩脚的语言特性吧。</p>
+
+<p>```
+func sumOf(numbers: Int...) -> Int {</p>
+
+<pre><code>var sum = 0
+for number in numbers {
+    sum += number
+}
+return sum
+</code></pre>
+
+<p>}
+sumOf()
+sumOf(42, 597, 12)</p>
+
+<p>func average(numbers: Int...) -> Double {</p>
+
+<pre><code>let count = numbers.count
+// The code below do not work!
+// let avg = sumOf(*numbers) / count
+return avg
+</code></pre>
+
+<p>}
+```</p>
+
+<h2>枚举类型遍历</h2>
+
+<p>Swift 可以使用 <code>enum</code> 定义枚举类型，但是目前貌似没有非常方便的方法返回所有的枚举值。希望以后能添加这样的方法吧。</p>
+
+<h2>命名空间</h2>
+
+<p>Swift 有命名空间的功能，不过很少有地方提到。在解决下面与命名空间有关的一个问题时找到了 Lattner 大神的 Twitter，提到了显式使用命名空间。链接：<a href="https://twitter.com/clattner_llvm/status/474772713739792384">Chris Lattner suggests</a></p>
+
+<p>与命名空间有关的问题代码如下：</p>
+
+<p>```
+extension Int {</p>
+
+<pre><code>func restrictToRange(#minValue: Int, maxValue: Int) -&gt; Int {
+    var ret: Int
+
+    // 'Int' does not have a member named 'min'
+    //ret  = min(max(self, minValue), maxValue)
+
+    // use explicit namespace
+    ret = Swift.min(Swift.max(self, minValue), maxValue)
+    return ret
+}
+</code></pre>
+
+<p>}
+```</p>
+
+<p>我想用 <code>extension</code> 向 <code>Int</code> 中添加一个方法，在其中用到了 <code>min</code> 和 <code>max</code> 两个全局函数，但是直接使用会有 <code>'Int' does not have a member named 'min'</code> 这样的错误提示，在函数名前加上显式的命名空间 <code>Swift</code> 后问题解决，但是引起该错误的原因没有找到，可能与作用域和符号查找有关吧，希望在以后能找出该问题的具体原因。</p>
+]]></content>
+  </entry>
+  
+</feed>

@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2015-01-26T23:04:45+08:00</updated>
+  <updated>2015-02-14T22:25:58+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,169 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[Redis Database Number]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/02/14/redis-db-number/"/>
+    <updated>2015-02-14T22:00:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/02/14/redis-db-number</id>
+    <content type="html"><![CDATA[<p>Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。</p>
+
+<h3>使用命令行连接其他数据库</h3>
+
+<p>可以使用 <code>-n</code> 选项指定连接的数据库号。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n &lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>redis-cli -n 2
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>2<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果已经执行 <code>redis-cli</code> 进入了Redis控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 1
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>1<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在Redis控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
+
+<h3>使用URL连接其他数据库</h3>
+
+<p>在URL后面添加数据库号即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>redis://127.0.0.1:6379/&lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'>redis://127.0.0.1:6379/1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>连接到不存在的数据库号</h3>
+
+<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是BUG。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n 10000
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 10000
+</span><span class='line'><span class="o">(</span>error<span class="o">)</span> ERR invalid DB index
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt; <span class="nb">set </span>number 10000
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[A Swift Tour 笔记]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/02/06/a-swift-tour-note/"/>
+    <updated>2015-02-06T23:06:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/02/06/a-swift-tour-note</id>
+    <content type="html"><![CDATA[<p>最近看完了 The Swift Programming Language 中的 A Swift Tour 一节，对 Swift 有了一点初步的了解，在此记录一下学习过程中遇到的一些问题。</p>
+
+<h2>可变参数列表</h2>
+
+<p>Swift 的函数可以接受多个参数，把它们收集到一个数组中。这本来应该是一个不错的语言特性，但是在写对应的 experiment 时就发现问题了，Swift 只能把多个参数收集到数组中，却不能将一个数组打散成多个参数。Ruby 中可以用 <code>sumOf(*numbers)</code> 这样的方式实现将数据打散成多个参数，Swift 目前没有这样的功能，所以无法用下面的代码实现 <code>average</code> 函数。如果实在想用 <code>sumOf</code> 函数来实现 <code>average</code>，那只能将 <code>sumOf</code> 的参数改为数组类型的。只能期待Swift能在以后实现这样的功能了，目前来说尽量少用这样的蹩脚的语言特性吧。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>func sumOf(numbers: Int...) -&gt; Int {
+</span><span class='line'>    var sum = 0
+</span><span class='line'>    for number in numbers {
+</span><span class='line'>        sum += number
+</span><span class='line'>    }
+</span><span class='line'>    return sum
+</span><span class='line'>}
+</span><span class='line'>sumOf()
+</span><span class='line'>sumOf(42, 597, 12)
+</span><span class='line'>
+</span><span class='line'>func average(numbers: Int...) -&gt; Double {
+</span><span class='line'>    let count = numbers.count
+</span><span class='line'>    // The code below do not work!
+</span><span class='line'>    // let avg = sumOf(*numbers) / count
+</span><span class='line'>    return avg
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>枚举类型遍历</h2>
+
+<p>Swift 可以使用 <code>enum</code> 定义枚举类型，但是目前貌似没有非常方便的方法返回所有的枚举值。希望以后能添加这样的方法吧。</p>
+
+<h2>命名空间</h2>
+
+<p>Swift 有命名空间的功能，不过很少有地方提到。在解决下面与命名空间有关的一个问题时找到了 Lattner 大神的 Twitter，提到了显式使用命名空间。链接：<a href="https://twitter.com/clattner_llvm/status/474772713739792384">Chris Lattner suggests</a></p>
+
+<p>与命名空间有关的问题代码如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>extension Int {
+</span><span class='line'>
+</span><span class='line'>    func restrictToRange(#minValue: Int, maxValue: Int) -&gt; Int {
+</span><span class='line'>        var ret: Int
+</span><span class='line'>
+</span><span class='line'>        // 'Int' does not have a member named 'min'
+</span><span class='line'>        //ret  = min(max(self, minValue), maxValue)
+</span><span class='line'>
+</span><span class='line'>        // use explicit namespace
+</span><span class='line'>        ret = Swift.min(Swift.max(self, minValue), maxValue)
+</span><span class='line'>        return ret
+</span><span class='line'>    }
+</span><span class='line'>
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>我想用 <code>extension</code> 向 <code>Int</code> 中添加一个方法，在其中用到了 <code>min</code> 和 <code>max</code> 两个全局函数，但是直接使用会有 <code>'Int' does not have a member named 'min'</code> 这样的错误提示，在函数名前加上显式的命名空间 <code>Swift</code> 后问题解决，但是引起该错误的原因没有找到，可能与作用域和符号查找有关吧，希望在以后能找出该问题的具体原因。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[OSX 中挂载 NTFS 分区]]></title>

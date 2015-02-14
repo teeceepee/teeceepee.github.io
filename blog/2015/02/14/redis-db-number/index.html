@@ -5,11 +5,11 @@
 <!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  <title>Debian禁用不必要的开机自启动服务 - Why Y</title>
+  <title>Redis Database Number - Why Y</title>
   <meta name="author" content="">
 
   
-  <meta name="description" content="经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。 &hellip;">
+  <meta name="description" content="Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。 使用命令行连接其他数据库 可以使用 - &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -18,7 +18,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
   
-  <link rel="canonical" href="http://teeceepee.github.com/blog/2013/12/30/remove-unnecessary-auto-start-services">
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/02/14/redis-db-number">
   <link href="/favicon.png" rel="icon">
   <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
   <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
@@ -66,7 +66,7 @@
   
   <header>
     
-      <h1 class="entry-title">Debian禁用不必要的开机自启动服务</h1>
+      <h1 class="entry-title">Redis Database Number</h1>
     
     
       <p class="meta">
@@ -82,65 +82,77 @@
   
 
 
-<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
+<time datetime="2015-02-14T22:00:00+08:00" pubdate data-updated="true">Feb 14<span>th</span>, 2015</time>
         
       </p>
     
   </header>
 
 
-<div class="entry-content"><p>经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。Debian有一个命令，但是每次改都要现查，老是记不住。写一篇博客加深一下印象吧。</p>
+<div class="entry-content"><p>Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。</p>
 
-<p>这个命令是<code>update-rc.d</code>，看名字就知道是修改rc?.d的。根据<code>man update-rc.d</code>，用法如下：</p>
+<h3>使用命令行连接其他数据库</h3>
+
+<p>可以使用 <code>-n</code> 选项指定连接的数据库号。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n &lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>redis-cli -n 2
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>2<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果已经执行 <code>redis-cli</code> 进入了Redis控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 1
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>1<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在Redis控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
+
+<h3>使用URL连接其他数据库</h3>
+
+<p>在URL后面添加数据库号即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>redis://127.0.0.1:6379/&lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'>redis://127.0.0.1:6379/1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>连接到不存在的数据库号</h3>
+
+<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是BUG。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n 10000
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
 <span class='line-number'>3</span>
 <span class='line-number'>4</span>
 <span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> <span class="o">[</span>-f<span class="o">]</span> name remove
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name defaults
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name disable|enable <span class="o">[</span> S|2|3|4|5 <span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>用到的是最后一个，如果最后面的运行级别不指定则修改所有级别。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># 禁止Redis开机启动</span>
-</span><span class='line'>sudo update-rc.d redis-server disable
-</span><span class='line'><span class="c"># Redis开机启动</span>
-</span><span class='line'>sudo update-rc.d redis-server <span class="nb">enable</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>写这篇博客时顺便学会了一个查看所有服务运行状态的命令，+表示正在运行，-表示没有运行，?表示不详（？），可能是不支持用status查询状态吧。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service --status-all
-</span><span class='line'><span class="c"># ==&gt;</span>
-</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpi-fakekey
-</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  acpi-support
-</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpid
-</span><span class='line'> <span class="o">[</span> ? <span class="o">]</span>  alsa-utils
-</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  anacron
-</span><span class='line'>...
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 10000
+</span><span class='line'><span class="o">(</span>error<span class="o">)</span> ERR invalid DB index
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt; <span class="nb">set </span>number 10000
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
 </span></code></pre></td></tr></table></div></figure>
 
 </div>
@@ -165,7 +177,7 @@
   
 
 
-<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
+<time datetime="2015-02-14T22:00:00+08:00" pubdate data-updated="true">Feb 14<span>th</span>, 2015</time>
       
 
 
@@ -180,10 +192,8 @@
     
     <p class="meta">
       
-        <a class="basic-alignment left" href="/blog/2013/12/28/install-docker-and-build-an-image/" title="Previous Post: 安装docker并手工构建一个image">&laquo; 安装docker并手工构建一个image</a>
+        <a class="basic-alignment left" href="/blog/2015/02/06/a-swift-tour-note/" title="Previous Post: A Swift Tour 笔记">&laquo; A Swift Tour 笔记</a>
       
-      
-        <a class="basic-alignment right" href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/" title="Next Post: 使用libreadline6.3编译Ruby">使用libreadline6.3编译Ruby &raquo;</a>
       
     </p>
   </footer>
