@@ -3,7 +3,7 @@ layout: post
 title: "A Swift Tour 笔记"
 date: 2015-02-06 23:06
 comments: true
-categories: swift
+categories: Swift
 ---
 
 最近看完了 The Swift Programming Language 中的 A Swift Tour 一节，对 Swift 有了一点初步的了解，在此记录一下学习过程中遇到的一些问题。
