@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="想写一个简单的解释器，源代码用字符串表示。本来想自己写一个scanner，后来发现Ruby库中有一个StringScanner类，但不是用Ruby写的，不能做源码浏览了。在这里记录一下StringScanner的用法。 &lt;b> strscan &lt;/b> &hellip;">
+  <meta name="description" content="想写一个简单的解释器，源代码用字符串表示。本来想自己写一个 scanner，后来发现 Ruby 库中有一个 StringScanner 类，但不是用 Ruby 写的，不能做源码浏览了。在这里记录一下 StringScanner 的用法。 &lt;b> strscan &lt;/b> 要用 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -92,17 +92,17 @@
   </header>
 
 
-  <div class="entry-content"><p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个scanner，后来发现Ruby库中有一个StringScanner类，但不是用Ruby写的，不能做源码浏览了。在这里记录一下StringScanner的用法。</p>
+  <div class="entry-content"><p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个 scanner，后来发现 Ruby 库中有一个 StringScanner 类，但不是用 Ruby 写的，不能做源码浏览了。在这里记录一下 StringScanner 的用法。</p>
 
 <h1>&lt;b> strscan &lt;/b></h1>
 
-<p>要用StringScanner类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
+<p>要用 StringScanner 类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
 
-<p>按照StringScanner<a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个position变量，使得每次扫描都从position开始而不是开头。</p>
+<p>按照 StringScanner <a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个 position 变量，使得每次扫描都从position开始而不是开头。</p>
 
 <h1>常用方法</h1>
 
-<p><code>StringScanner.new</code> 构造一个StringScanner对象，参数是待扫描的字符串。</p>
+<p><code>StringScanner.new</code> 构造一个 StringScanner 对象，参数是待扫描的字符串。</p>
 
 <figure class='code'><figcaption><span>StringScanner.new</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;(+ a 2)&#39;</span>
@@ -111,7 +111,7 @@
 
 <p><code>StringScanner#eos?</code> 判断是否扫描完毕。</p>
 
-<p><code>StringScanner#scan</code> 参数pattern为一个正则表达式，尝试从当前位置与pattern匹配，如果成功那么scanner前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
+<p><code>StringScanner#scan</code> 参数 pattern 为一个正则表达式，尝试从当前位置与 pattern 匹配，如果成功那么 scanner 前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
 
 <figure class='code'><figcaption><span>StringScanner#scan</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -128,7 +128,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p><code>StringScanner#peek</code> 接受一个数字类型的参数len，返回string[pos, len]，也就是即将被扫描的字符串，不推进扫描指针。</p>
+<p><code>StringScanner#peek</code> 接受一个数字类型的参数 len，返回 <code>string[pos, len]</code>，也就是即将被扫描的字符串，不推进扫描指针。</p>
 
 <p><code>StringScanner#check</code> 与 <code>scan</code> 类似，但是不推进扫描指针。</p>
 </div>
@@ -169,7 +169,7 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2014/11/15/explore-active-support-1/">explore active support 1</a>
+        <a href="/blog/2014/11/15/explore-active-support-1/">Explore ActiveSupport 1</a>
       </li>
     
   </ul>

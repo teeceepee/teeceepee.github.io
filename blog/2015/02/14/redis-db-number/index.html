@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。 使用命令行连接其他数据库 可以使用 - &hellip;">
+  <meta name="description" content="Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -89,7 +89,7 @@
   </header>
 
 
-<div class="entry-content"><p>Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。</p>
+<div class="entry-content"><p>Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。</p>
 
 <h3>使用命令行连接其他数据库</h3>
 
@@ -106,7 +106,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>如果已经执行 <code>redis-cli</code> 进入了Redis控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
+<p>如果已经执行 <code>redis-cli</code> 进入了 Redis 控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -117,11 +117,11 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在Redis控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
+<p>在 Redis 控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
 
 <h3>使用URL连接其他数据库</h3>
 
-<p>在URL后面添加数据库号即可。</p>
+<p>在连接 URL 后面添加数据库号即可。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -134,7 +134,7 @@
 
 <h3>连接到不存在的数据库号</h3>
 
-<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是BUG。</p>
+<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是 BUG。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -180,6 +180,12 @@
 <time datetime="2015-02-14T22:00:00+08:00" pubdate data-updated="true">Feb 14<span>th</span>, 2015</time>
       
 
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/redis/'>Redis</a>
+  
+</span>
+
 
     </p>
     
@@ -224,7 +230,7 @@
       </li>
     
       <li class="post">
-        <a href="/blog/2014/11/15/explore-active-support-1/">explore active support 1</a>
+        <a href="/blog/2014/11/15/explore-active-support-1/">Explore ActiveSupport 1</a>
       </li>
     
   </ul>

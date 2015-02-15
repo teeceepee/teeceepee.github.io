@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2015-02-14T22:25:58+08:00</updated>
+  <updated>2015-02-15T15:06:50+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -18,7 +18,7 @@
     <link href="http://teeceepee.github.com/blog/2015/02/14/redis-db-number/"/>
     <updated>2015-02-14T22:00:00+08:00</updated>
     <id>http://teeceepee.github.com/blog/2015/02/14/redis-db-number</id>
-    <content type="html"><![CDATA[<p>Redis使用DB number实现类似关系型数据库中schema的功能。不同DB number表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu默认的配置文件配置了16个数据库，DB number是从0开始的，并且默认连接0号数据库。</p>
+    <content type="html"><![CDATA[<p>Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。</p>
 
 <h3>使用命令行连接其他数据库</h3>
 
@@ -35,7 +35,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>如果已经执行 <code>redis-cli</code> 进入了Redis控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
+<p>如果已经执行 <code>redis-cli</code> 进入了 Redis 控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -46,11 +46,11 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>在Redis控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
+<p>在 Redis 控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
 
 <h3>使用URL连接其他数据库</h3>
 
-<p>在URL后面添加数据库号即可。</p>
+<p>在连接 URL 后面添加数据库号即可。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -63,7 +63,7 @@
 
 <h3>连接到不存在的数据库号</h3>
 
-<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是BUG。</p>
+<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是 BUG。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -262,15 +262,15 @@
   </entry>
   
   <entry>
-    <title type="html"><![CDATA[explore active support 1]]></title>
+    <title type="html"><![CDATA[Explore ActiveSupport 1]]></title>
     <link href="http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1/"/>
     <updated>2014-11-15T20:57:00+08:00</updated>
     <id>http://teeceepee.github.com/blog/2014/11/15/explore-active-support-1</id>
-    <content type="html"><![CDATA[<p>Ruby on Rails框架的Active Support组件提供了很多方便使用的方法，有些方法是通过Monkey Patch的方式添加到Ruby原有的类中的。</p>
+    <content type="html"><![CDATA[<p>Ruby on Rails 框架的 Active Support 组件提供了很多方便使用的方法，有些方法是通过 Monkey Patch 的方式添加到 Ruby 原有的类中的。</p>
 
 <h2>Object#blank?</h2>
 
-<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到Object类，还添加到了NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash等类中。</p>
+<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到 Object 类，还添加到了 NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash 等类中。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -303,7 +303,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>判断一个对象是否是空白的。空白的定义是如果一个对象是false，empty或空白字符，那么就是空白的。比较的特殊的是对String类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持Unicode的空白字符。</p>
+<p>判断一个对象是否是空白的。空白的定义是如果一个对象是 false，empty 或空白字符，那么就是空白的。比较的特殊的是对 String 类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持 Unicode 的空白字符。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -322,11 +322,11 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>所有的数字都不是空白的，因为向Numeric类添加的blank?方法永远返回false。</p>
+<p>所有的数字都不是空白的，因为向 Numeric 类添加的 blank? 方法永远返回 false。</p>
 
 <h2>Object#present?</h2>
 
-<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回true。</p>
+<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回 true。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -339,7 +339,7 @@
 
 <h2>ActiveSupport::HashWithIndifferentAccess</h2>
 
-<p>随着Ruby版本的发展，String和Symbol对象的差别越来越小，在Ruby和Rails中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是Hash的键。<code>:foo.hash != 'foo'.hash</code>，Active Support中得HashWithIndifferentAccess类就是解决这个问题的。</p>
+<p>随着 Ruby 版本的发展，String 和 Symbol 对象的差别越来越小，在 Ruby 和 Rails 中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是 Hash 的键。<code>:foo.hash != 'foo'.hash</code>，Active Support 中的 HashWithIndifferentAccess 类就是解决这个问题的。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -364,7 +364,7 @@
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的Hash对象转化。</p>
+<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的 Hash 对象转化。</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">black</span><span class="p">:</span> <span class="s1">&#39;#000000&#39;</span><span class="p">,</span> <span class="ss">white</span><span class="p">:</span> <span class="s1">&#39;#FFFFFF&#39;</span> <span class="p">}</span><span class="o">.</span><span class="n">with_indifferent_access</span>
@@ -853,7 +853,7 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     <link href="http://teeceepee.github.com/blog/2013/06/13/xfce-windowbutton/"/>
     <updated>2013-06-13T22:12:00+08:00</updated>
     <id>http://teeceepee.github.com/blog/2013/06/13/xfce-windowbutton</id>
-    <content type="html"><![CDATA[<p>前几天更新了一下debian系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现xfce的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google这个问题后在xfce官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
+    <content type="html"><![CDATA[<p>前几天更新了一下 Debian 系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现 xfc 的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google 这个问题后在 xfce 官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
 
 <p><a href="http://www.xfce.org/about/tour?lang=zh_CN">xfce</a></p>
 ]]></content>
@@ -864,17 +864,17 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     <link href="http://teeceepee.github.com/blog/2013/06/03/ruby-stringscanner/"/>
     <updated>2013-06-03T20:09:00+08:00</updated>
     <id>http://teeceepee.github.com/blog/2013/06/03/ruby-stringscanner</id>
-    <content type="html"><![CDATA[<p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个scanner，后来发现Ruby库中有一个StringScanner类，但不是用Ruby写的，不能做源码浏览了。在这里记录一下StringScanner的用法。</p>
+    <content type="html"><![CDATA[<p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个 scanner，后来发现 Ruby 库中有一个 StringScanner 类，但不是用 Ruby 写的，不能做源码浏览了。在这里记录一下 StringScanner 的用法。</p>
 
 <h1>&lt;b> strscan &lt;/b></h1>
 
-<p>要用StringScanner类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
+<p>要用 StringScanner 类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
 
-<p>按照StringScanner<a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个position变量，使得每次扫描都从position开始而不是开头。</p>
+<p>按照 StringScanner <a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个 position 变量，使得每次扫描都从position开始而不是开头。</p>
 
 <h1>常用方法</h1>
 
-<p><code>StringScanner.new</code> 构造一个StringScanner对象，参数是待扫描的字符串。</p>
+<p><code>StringScanner.new</code> 构造一个 StringScanner 对象，参数是待扫描的字符串。</p>
 
 <figure class='code'><figcaption><span>StringScanner.new</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 </pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;(+ a 2)&#39;</span>
@@ -883,7 +883,7 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 
 <p><code>StringScanner#eos?</code> 判断是否扫描完毕。</p>
 
-<p><code>StringScanner#scan</code> 参数pattern为一个正则表达式，尝试从当前位置与pattern匹配，如果成功那么scanner前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
+<p><code>StringScanner#scan</code> 参数 pattern 为一个正则表达式，尝试从当前位置与 pattern 匹配，如果成功那么 scanner 前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
 
 <figure class='code'><figcaption><span>StringScanner#scan</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
 <span class='line-number'>2</span>
@@ -900,7 +900,7 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 </span></code></pre></td></tr></table></div></figure>
 
 
-<p><code>StringScanner#peek</code> 接受一个数字类型的参数len，返回string[pos, len]，也就是即将被扫描的字符串，不推进扫描指针。</p>
+<p><code>StringScanner#peek</code> 接受一个数字类型的参数 len，返回 <code>string[pos, len]</code>，也就是即将被扫描的字符串，不推进扫描指针。</p>
 
 <p><code>StringScanner#check</code> 与 <code>scan</code> 类似，但是不推进扫描指针。</p>
 ]]></content>
