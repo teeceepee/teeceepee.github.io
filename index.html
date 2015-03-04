@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。 &hellip;">
+  <meta name="description" content="前几天在项目中发现有不能正确同步输入框内容的页面，经过上网查找后找到了一种比较好的办法。 要想同步输入框内容，就要监听各种可能使输入框内容发生改变的事件，第一个想到的就是监听键盘输入的事件，与键盘输入相关的事件有 keydown, keypress, keyup 等，keydown 和 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +66,94 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-03-04T22:08:00+08:00" pubdate data-updated="true">Mar 4<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>前几天在项目中发现有不能正确同步输入框内容的页面，经过上网查找后找到了一种比较好的办法。</p>
+
+<p>要想同步输入框内容，就要监听各种可能使输入框内容发生改变的事件，第一个想到的就是监听键盘输入的事件，与键盘输入相关的事件有 <code>keydown</code>, <code>keypress</code>, <code>keyup</code> 等，<code>keydown</code> 和 <code>keypress</code> 发生在输入框内容改变之前，应该使用 <code>keyup</code> 事件。除了键盘输入外，通过粘贴的方式也会使输入框内容发生变化。 使用键盘快捷键粘贴的方式也会触发 <code>keyup</code> 事件，不过用鼠标右键粘贴的方式不触发 <code>keyup</code> 事件，鼠标右键粘贴会触发 <code>paste</code> 事件，但是该事件发生在输入框内容改变之前，不能正确同步内容。</p>
+
+<p>针对鼠标右键粘贴等方式没有找到太好的办法，只想出了一个折衷的办法：当输入框失去焦点时同步内容，这样虽然不能保持实时同步，但能保证最终同步。输入框失去焦点的事件是 <code>blur</code> 。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;label&gt;</span>Input:<span class="nt">&lt;/label&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;input</span> <span class="na">id=</span><span class="s">&quot;input-field&quot;</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span><span class="nt">&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;br&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;label&gt;</span>Output:<span class="nt">&lt;/label&gt;</span>
+</span><span class='line'>  <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">&quot;output-field&quot;</span><span class="nt">&gt;&lt;/span&gt;</span>
+</span><span class='line'><span class="nt">&lt;/div&gt;</span>
+</span><span class='line'><span class="nt">&lt;script&gt;</span>
+</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#input-field&#39;</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;keyup blur&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;asdf&#39;</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#output-field&#39;</span><span class="p">).</span><span class="nx">text</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">val</span><span class="p">());</span>
+</span><span class='line'>  <span class="p">});</span>
+</span><span class='line'><span class="nt">&lt;/script&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<div>
+  <label>Input:</label>
+  <input id="input-field" type="text">
+  <br>
+  <label>Output:</label>
+  <span id="output-field"></span>
+</div>
+
+
+<script>
+  $('#input-field').on('keyup blur', function() {
+    console.log('asdf');
+    $('#output-field').text($(this).val());
+  });
+</script>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1145,44 +1233,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/06/13/xfce-windowbutton/">Xfce桌面按钮扩展</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-13T22:12:00+08:00" pubdate data-updated="true">Jun 13<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>前几天更新了一下 Debian 系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现 xfc 的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google 这个问题后在 xfce 官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
-
-<p><a href="http://www.xfce.org/about/tour?lang=zh_CN">xfce</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1198,6 +1248,10 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a>
       </li>
     
@@ -1211,10 +1265,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     
       <li class="post">
         <a href="/blog/2014/12/06/install-emacs-on-osx/">Install Emacs on OSX</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/11/15/explore-active-support-1/">Explore ActiveSupport 1</a>
       </li>
     
   </ul>
