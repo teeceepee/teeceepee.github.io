@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="前几天在项目中发现有不能正确同步输入框内容的页面，经过上网查找后找到了一种比较好的办法。 要想同步输入框内容，就要监听各种可能使输入框内容发生改变的事件，第一个想到的就是监听键盘输入的事件，与键盘输入相关的事件有 keydown, keypress, keyup 等，keydown 和 &hellip;">
+  <meta name="description" content="CarrierWave 是一个 Ruby 应用的上传组件，很多 Rails 程序都会用到它。与它类似的 gem 还有 PaperClip、Dragonfly 等。因为遇到过的项目都是用 CarrierWave，所以想从零开始学习一下他的使用方法。在 GitHub 上的 master &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +66,483 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-04-26T20:28:00+08:00" pubdate data-updated="true">Apr 26<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p><a href="https://github.com/carrierwaveuploader/carrierwave">CarrierWave</a> 是一个 Ruby 应用的上传组件，很多 Rails 程序都会用到它。与它类似的 gem 还有 PaperClip、Dragonfly 等。因为遇到过的项目都是用 CarrierWave，所以想从零开始学习一下他的使用方法。在 GitHub 上的 master 分支是一个正在开发的版本，下面用的都是 0.10.0 版本。</p>
+
+<p>在 Rails 项目的 Gemfile 中添加 CarrierWave 并执行 <code>bundle install</code> 后就可以使用它了。CarrierWave 提供了一个 generator 来方便的生成 uploader。用法如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>rails generate uploader Avatar
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的命令会生成 <code>app/uploaders/avatar_uploader.rb</code> 文件。从文件的路径中可以看出一些 CarrierWave 的约定。所有的 uploader 都放在 <code>app/uploaders</code> 目录下，这个目录不是 Rails 默认有的目录，如果不存在 CarrierWave 会自动创建。所有的 uploader 文件名都以 <code>uploader</code> 结尾，对应的类名也是 <code>XyzUploader</code>。</p>
+
+<p>在 Rails 程序中很少单独使用 uploader，一般都会与 ORM 配合使用。如果使用 ActiveRecord，可以用 <code>mount_uploader</code> 将 uploader 与模型关联。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">User</span> <span class="o">&lt;</span> <span class="ss">ActiveRecord</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">mount_uploader</span> <span class="ss">:avatar</span><span class="p">,</span> <span class="no">AvatarUploader</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>mount_uploader</code> 的第一个参数对应数据库的一个字符串类型的字段，用于存储上传文件的文件名，第二个参数是使用的 uploader 类名。</p>
+
+<p>默认生成的 uploader 这样就可以使用了，如果发现不能正常使用的话需要重启服务器。但是在 Rails console 里貌似没有自动加载 <code>app/uploaders</code> 目录下的文件，这样会出现 <code>Uninitialized constant ...</code> 的异常。如果遇到这样的情况又想在 Rails console 中测试，需要在 <code>config/application.rb</code> 中将目录加入到自动加载的列表中。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">autoload_paths</span> <span class="o">+=</span> <span class="sx">%W(</span><span class="si">#{</span><span class="n">config</span><span class="o">.</span><span class="n">root</span><span class="si">}</span><span class="sx">/app/uploaders)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这个问题可能是 CarrierWave 的一个 BUG，参考</p>
+
+<p><a href="http://www.codeomnib.us/rails-4-carrierwave-throws-uninitialized-uploader-console/">http://www.codeomnib.us/rails-4-carrierwave-throws-uninitialized-uploader-console/</a>
+<a href="https://github.com/carrierwaveuploader/carrierwave/issues/399">https://github.com/carrierwaveuploader/carrierwave/issues/399</a></p>
+
+<h2>存储方式</h2>
+
+<p>CarrierWave 支持多种存储方式，既可以将文件存储在本地的硬盘中，也可以使用各种云存储。CarrierWave 默认生成的 uploader 中有一行 <code>storage :file</code>，表示将文件存在本地硬盘。</p>
+
+<h2>存储目录</h2>
+
+<p>如果使用本地文件的存储方式，需要指定所有上传文件的存储目录。存储目录由 uploader 中的 <code>store_dir</code> 指定，默认生成的 uploader 文件中已经有一个可以使用的 <code>store_dir</code> 方法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">store_dir</span>
+</span><span class='line'>  <span class="s2">&quot;uploads/</span><span class="si">#{</span><span class="n">model</span><span class="o">.</span><span class="n">class</span><span class="o">.</span><span class="n">to_s</span><span class="o">.</span><span class="n">underscore</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">mounted_as</span><span class="si">}</span><span class="s2">/</span><span class="si">#{</span><span class="n">model</span><span class="o">.</span><span class="n">id</span><span class="si">}</span><span class="s2">&quot;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从中可以看出一些 <code>CarrierWave::Uploader::Base</code> 类的一些方法。<code>model</code> 方法表示该 uploader 对应的模型，<code>mounted_as</code> 方法的值就是在模型中使用 <code>mount_uploader</code> 的第一个参数，也就是数据库中对应的字段名。</p>
+
+<h2>扩展名限制</h2>
+
+<p>在实际的上传情景中，可能需要对上传文件的扩展名做一些限制，CarrierWave 提供了白名单和黑名单两种方式，两种方式分别通过 <code>extension_white_list</code> 和 <code>extension_black_list</code> 方法实现。CarrierWave 默认生成的 uploader 在注释中给出了这两个方法的实现方式。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="k">def</span> <span class="nf">extension_white_list</span>
+</span><span class='line'>    <span class="sx">%w(jpg jpeg gif png)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>方法只要返回允许或拒绝的扩展名数组即可，而且不区分大小写。数组的元素除了可以是字符串，还可以是正则表达式，比如 <code>[/jpe?g/, 'gif', 'png']</code>。</p>
+
+<h2>文件名</h2>
+
+<p>CarrierWave 在保存文件名时会对原始文件名进行修改，默认的行为是只保留英文字符、数字以及 <code>.-+_</code> 四个符号，其他字符会被转化为 <code>_</code>，实现方式在 CarrierWave 源码的 <code>lib/carrierwave/sanitized_file.rb</code> 中：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># lib/carrierwave/sanitized_file.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">CarrierWave</span>
+</span><span class='line'>  <span class="k">class</span> <span class="nc">SanitizedFile</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">class</span> <span class="o">&lt;&lt;</span> <span class="nb">self</span>
+</span><span class='line'>      <span class="kp">attr_writer</span> <span class="ss">:sanitize_regex</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="k">def</span> <span class="nf">sanitize_regex</span>
+</span><span class='line'>        <span class="vi">@sanitize_regex</span> <span class="o">||=</span> <span class="sr">/[^a-zA-Z0-9\.\-\+_]/</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">sanitize_regexp</span>
+</span><span class='line'>      <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:SanitizedFile</span><span class="o">.</span><span class="n">sanitize_regexp</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># Sanitize the filename, to prevent hacking</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">sanitize</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="nb">name</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;/&quot;</span><span class="p">)</span> <span class="c1"># work-around for IE</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="nb">name</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="nb">name</span><span class="o">.</span><span class="n">gsub</span><span class="p">(</span><span class="n">sanitize_regexp</span><span class="p">,</span><span class="s2">&quot;_&quot;</span><span class="p">)</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="s2">&quot;_</span><span class="si">#{</span><span class="nb">name</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="nb">name</span> <span class="o">=~</span> <span class="sr">/\A\.+\z/</span>
+</span><span class='line'>      <span class="nb">name</span> <span class="o">=</span> <span class="s2">&quot;unnamed&quot;</span> <span class="k">if</span> <span class="nb">name</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span>
+</span><span class='line'>      <span class="k">return</span> <span class="nb">name</span><span class="o">.</span><span class="n">mb_chars</span><span class="o">.</span><span class="n">to_s</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从代码中可以看到，默认使用 <code>/[^a-zA-Z0-9\.\-\+_]/</code> 对文件名进行处理，匹配的字符被替换为 <code>_</code>。同时看到也可以使用其他的正则对文件名进行处理。比如保留原始文件名：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/initializers/carrierwave.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:SanitizedFile</span><span class="o">.</span><span class="n">sanitize_regex</span> <span class="o">=</span> <span class="sr">/[^[:word:]\.\-\+]/</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>创建 <code>config/initializers/carrierwave.rb</code> 文件，写入这行代码 。这是官方文档提供的正则，需要注意的是，这个正则表达式匹配的是所有不允许的字符。</p>
+
+<p>如果想要自定义上传文件的文件名，需要重写 <code>filename</code> 方法。下面的例子参考 CarrierWave 的 Wiki：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">PhotoUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">filename</span>
+</span><span class='line'>    <span class="s2">&quot;</span><span class="si">#{</span><span class="n">secure_token</span><span class="si">}</span><span class="s2">.</span><span class="si">#{</span><span class="n">file</span><span class="o">.</span><span class="n">extension</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">original_filename</span><span class="o">.</span><span class="n">present?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="kp">protected</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">secure_token</span>
+</span><span class='line'>    <span class="n">var</span> <span class="o">=</span> <span class="ss">:&quot;@</span><span class="si">#{</span><span class="n">mounted_as</span><span class="si">}</span><span class="ss">_secure_token&quot;</span>
+</span><span class='line'>    <span class="n">model</span><span class="o">.</span><span class="n">instance_variable_get</span><span class="p">(</span><span class="n">var</span><span class="p">)</span> <span class="ow">or</span> <span class="n">model</span><span class="o">.</span><span class="n">instance_variable_set</span><span class="p">(</span><span class="n">var</span><span class="p">,</span> <span class="no">SecureRandom</span><span class="o">.</span><span class="n">uuid</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>目前还不太明白为什么要把实例变量存在模型对象而不是 uploader 对象中。但是一定要像例子中那样将 <code>SecureRandom.uuid</code> 的值用实例变量缓存起来，否则数据库中存储的文件名会与本地硬盘中的文件名不同，因为在处理过程中 <code>filename</code> 方法会被多次使用。</p>
+
+<p>需要注意的是 <code>filename</code> 不能返回空字符串，我在尝试的过程中又一次不小心返回空字符串，结果出现了奇怪的错误。看了源码后发现 CarrierWave 的处理方式稍微有些问题。首先，对于重写 <code>filename</code> 返回空字符串或 nil 的做法 CarrierWave 并没有做检查，直接认为是合法的文件名。其次，CarrierWave 会改变上传文件的权限，目录的默认权限是 <code>755</code>，文件的默认权限是 <code>644</code>，这本身没问题，不过当文件名是空字符串或 nil 时，CarrierWave 还是会尝试将文件的权限改为 <code>644</code>，而这时的路径实际上对应的是一个目录。最终的结果就是将目录的执行权限去掉了，没有执行权限的目录是无法进入的，自然会出现一些奇怪的错误，比如 <code>Permission Denied</code> 。与这个问题相关的文件是 <code>lib/carrierwave/uploader/store.rb</code>。</p>
+
+<h2>图片处理</h2>
+
+<p>很多时候需要对上传的图片进行裁剪等处理，然后再保存。CarrierWave 通过 MiniMagick 或 RMagick 来实现对图片的处理。官方推荐使用 MiniMagick，下面的例子也都使用 MiniMagick。</p>
+
+<p>如果使用 MiniMagick，需要在 Gemfile 中将 MiniMagick 包含进来。如果修改了 Gemfile 然后再执行 <code>bundle install</code>，通常都需要重启服务器，Rails 的自动重新加载对 gem 无效。</p>
+
+<p>将 MiniMagick 加入项目之后，只需将默认生成的 uploader 文件中的一行代码取消注释就可以使用图片处理功能了。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">AvatarUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># Include RMagick or MiniMagick support:</span>
+</span><span class='line'>  <span class="c1"># include CarrierWave::RMagick</span>
+</span><span class='line'>  <span class="c1"># include CarrierWave::MiniMagick</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:MiniMagick</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>CarrierWave::MiniMagick</code> 这个模块包含了几个用于处理图片的方法：</p>
+
+<ul>
+<li><code>convert</code> 转换图片格式。</li>
+<li><code>resize_to_limit</code> 改变图片的大小，不超过指定的宽高，也就是只对超过限制的图片处理，不会有小图片变大的情况。</li>
+<li><code>resize_to_fit</code> 改变图片的大小，适应到指定的宽高，小图片会变大，大图片会变小。</li>
+<li><code>resize_to_fill</code> 改变图片的大小，填充到指定的宽高，可能会将比较大的维度裁减掉一部分。</li>
+<li><code>resize_and_pad</code> 与 <code>resize_to_fit</code> 类似，不足的部分用指定的颜色填充。</li>
+<li><code>manipulate!</code> 比较底层的方法，可以实现对图片的自定义处理，前面的方法都是用该方法实现的。</li>
+</ul>
+
+
+<p>以 resize 开头的四个方法只改变图片的大小，不会改变宽高比，所以用这些方法是不会把图片拉伸的。</p>
+
+<p>要在 uploader 中使用这几个方法来处理图片，要用到类方法 <code>process</code>，根据注释，<code>process</code> 方法本质上是注册一个在文件上传时执行的回调，接受的参数既可以是 uploader 中的方法名或方法名列表，也可以是一个 Hash，Hash 的键是方法名，值是调用方法需要的参数数组。方法的注释和实现如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>    <span class="c1">##</span>
+</span><span class='line'>    <span class="c1"># Adds a processor callback which applies operations as a file is uploaded.</span>
+</span><span class='line'>    <span class="c1"># The argument may be the name of any method of the uploader, expressed as a symbol,</span>
+</span><span class='line'>    <span class="c1"># or a list of such methods, or a hash where the key is a method and the value is</span>
+</span><span class='line'>    <span class="c1"># an array of arguments to call the method with</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># === Parameters</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># args (*Symbol, Hash{Symbol =&gt; Array[]})</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1"># === Examples</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#     class MyUploader &lt; CarrierWave::Uploader::Base</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#       process :sepiatone, :vignette</span>
+</span><span class='line'>    <span class="c1">#       process :scale =&gt; [200, 200]</span>
+</span><span class='line'>    <span class="c1">#       process :scale =&gt; [200, 200], :if =&gt; :image?</span>
+</span><span class='line'>    <span class="c1">#       process :sepiatone, :if =&gt; :image?</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#       def sepiatone</span>
+</span><span class='line'>    <span class="c1">#         ...</span>
+</span><span class='line'>    <span class="c1">#       end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#       def vignette</span>
+</span><span class='line'>    <span class="c1">#         ...</span>
+</span><span class='line'>    <span class="c1">#       end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#       def scale(height, width)</span>
+</span><span class='line'>    <span class="c1">#         ...</span>
+</span><span class='line'>    <span class="c1">#       end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#       def image?</span>
+</span><span class='line'>    <span class="c1">#         ...</span>
+</span><span class='line'>    <span class="c1">#       end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="c1">#     end</span>
+</span><span class='line'>    <span class="c1">#</span>
+</span><span class='line'>    <span class="k">def</span> <span class="nf">process</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">new_processors</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">inject</span><span class="p">({})</span> <span class="k">do</span> <span class="o">|</span><span class="nb">hash</span><span class="p">,</span> <span class="n">arg</span><span class="o">|</span>
+</span><span class='line'>        <span class="n">arg</span> <span class="o">=</span> <span class="p">{</span> <span class="n">arg</span> <span class="o">=&gt;</span> <span class="o">[]</span> <span class="p">}</span> <span class="k">unless</span> <span class="n">arg</span><span class="o">.</span><span class="n">is_a?</span><span class="p">(</span><span class="no">Hash</span><span class="p">)</span>
+</span><span class='line'>        <span class="nb">hash</span><span class="o">.</span><span class="n">merge!</span><span class="p">(</span><span class="n">arg</span><span class="p">)</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>      <span class="n">condition</span> <span class="o">=</span> <span class="n">new_processors</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="ss">:if</span><span class="p">)</span>
+</span><span class='line'>      <span class="n">new_processors</span><span class="o">.</span><span class="n">each</span> <span class="k">do</span> <span class="o">|</span><span class="n">processor</span><span class="p">,</span> <span class="n">processor_args</span><span class="o">|</span>
+</span><span class='line'>        <span class="nb">self</span><span class="o">.</span><span class="n">processors</span> <span class="o">+=</span> <span class="o">[[</span><span class="n">processor</span><span class="p">,</span> <span class="n">processor_args</span><span class="p">,</span> <span class="n">condition</span><span class="o">]]</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到如果键是 <code>:if</code> 会把它当做判断回调是否执行的条件。</p>
+
+<p>有了 <code>CarrierWave::MiniMagick</code> 和 <code>process</code>，二者组合起来就可以实现对上传图片的处理了：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">AvatarUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:MiniMagick</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">process</span> <span class="ss">convert</span><span class="p">:</span> <span class="s1">&#39;png&#39;</span>
+</span><span class='line'>  <span class="n">process</span> <span class="n">resize_to_limit</span><span class="p">:</span> <span class="o">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">process</span> <span class="n">resize_to_fit</span><span class="p">:</span> <span class="o">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">process</span> <span class="n">resize_to_fill</span><span class="p">:</span> <span class="o">[</span><span class="mi">200</span><span class="p">,</span> <span class="mi">200</span><span class="o">]</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>process</code> 可以注册多个回调，不过多次执行改变图片大小的回调会把图片变成什么样就不清楚了。</p>
+
+<p>其实 <code>CarrierWave::MiniMagick</code> 模块中还提供了简化的类方法来实现同样的作用，在网上找到的教程好像都没提到这一点，代码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">AvatarUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:MiniMagick</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">convert</span> <span class="s1">&#39;png&#39;</span>
+</span><span class='line'>  <span class="n">resize_to_limit</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span>
+</span><span class='line'>  <span class="n">resize_to_fit</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span>
+</span><span class='line'>  <span class="n">resize_to_fill</span> <span class="mi">200</span><span class="p">,</span> <span class="mi">200</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>多版本</h2>
+
+<p>CarrierWave 支持将上传的文件处理成多个版本分别保存，比如生成上传图片的缩略图。在 uploader 中使用 <code>version</code> 方法创建一个新版本，版本可以嵌套。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">AvatarUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:MiniMagick</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">version</span> <span class="ss">:thumb</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">version</span> <span class="ss">:foo</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">version</span> <span class="ss">:bar</span>
+</span><span class='line'>    <span class="n">version</span> <span class="ss">:baz</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的代码一共创建了四个版本，分别是 <code>thumb</code>，<code>foo</code>，<code>foo_bar</code>，<code>foo_baz</code>。创建新版本并不会影响默认的文件版本，所以使用上面的 uploader 每次上传会在本地硬盘存储五个文件。</p>
+
+<p>单纯创建版本只会生成多个内容相同的文件，并没有什么作用，只有搭配使用 <code>process</code> 方法才能发挥它的作用。例子如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">AvatarUploader</span> <span class="o">&lt;</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:Uploader</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="ss">CarrierWave</span><span class="p">:</span><span class="ss">:MiniMagick</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">process</span> <span class="n">resize_to_limit</span><span class="p">:</span> <span class="o">[</span><span class="mi">800</span><span class="p">,</span> <span class="mi">800</span><span class="o">]</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="n">version</span> <span class="ss">:thumb</span> <span class="k">do</span>
+</span><span class='line'>    <span class="n">process</span> <span class="n">resize_to_fill</span><span class="p">:</span> <span class="o">[</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="o">]</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这样每次上传会生成两个文件，默认版本大小限制在 800x800 像素以内，<code>thumb</code> 版本处理为 50x50 像素。</p>
+
+<h2>参考</h2>
+
+<p><a href="https://github.com/carrierwaveuploader/carrierwave">CarrierWave</a></p>
+
+<p><a href="http://www.codeomnib.us/rails-4-carrierwave-throws-uninitialized-uploader-console/">Uninitialized uploader</a></p>
+
+<p><a href="https://github.com/carrierwaveuploader/carrierwave/issues/399">CarrierWave issue #399</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1047,192 +1524,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">Metaprogramming Ruby Notes 1</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-07-19T13:55:00+08:00" pubdate data-updated="true">Jul 19<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>这些天在看<a href="http://book.douban.com/">《ruby元编程》</a>。其中有一个关于block的小测验，要模仿C#中的using关键字。</p>
-
-<p>在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试，但是仔细研究发现书中实现的using貌似有些问题，而且是大问题。实现using的目的在于在block中使用资源，使用完毕后自动将资源释放。因此using后面的block一定有一个参数代表资源，using的实现也应该将资源传递给block，所以正确的实现应该如下。</p>
-
-<figure class='code'><figcaption><span>using.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Kernel</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">yield</span> <span class="n">resource</span>
-</span><span class='line'>  <span class="k">ensure</span>
-</span><span class='line'>    <span class="n">resource</span><span class="o">.</span><span class="n">dispose</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>书中的实现在<code>yield</code>后没有resource，无法将资源传递给block。不能在block中使用资源，写这玩意儿有啥用？我看的版本是中文版，不清楚原版是否也有这个错误。另外，书中使用的是<code>begin ... ensure ... end</code>，在用<code>def</code>定义方法时<code>begin</code>是可以省略的。</p>
-
-<p>之所以会出现这个问题，我认为是单元测试的用例写的不够严格。下面是与书中原测试等价的测试用例。</p>
-
-<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;test/unit&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./using.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Resource</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">dispose</span>
-</span><span class='line'>    <span class="vi">@dispose</span> <span class="o">=</span> <span class="kp">true</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">disposed?</span>
-</span><span class='line'>    <span class="vi">@dispose</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">TestUsing</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">setup</span>
-</span><span class='line'>    <span class="vi">@r</span> <span class="o">=</span> <span class="no">Resource</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources</span>
-</span><span class='line'>    <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-</span><span class='line'>    <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources_in_case_of_exception</span>
-</span><span class='line'>    <span class="n">assert_raises</span><span class="p">(</span><span class="no">Exception</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>        <span class="k">raise</span> <span class="no">Exception</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>可以看到，两个测试在block中都没有使用资源。测试的不严谨导致了这个using的大bug。至少应该再添加一个测试，比如：</p>
-
-<figure class='code'><figcaption><span>using_test_add.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_with_block_argument</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>添加这个测试后，书中原代码会无法通过测试，因此可以发现这一bug。</p>
-
-<h1>后记</h1>
-
-<p>刚写完上面的，正在想怎么总结结尾的时候，一个想法忽然在脑海中闪现出来：我是否真的理解了书中设计的using的用法。按照我自己的想法，using的参数是一个实现了dispose方法的资源，后面的block是单形参的。这样using将资源传递给block，在block中使用形参代表资源。后来想了想，using后面的block其实也可以访问到外面的资源，没有必要设置一个参数来传递资源。比如：</p>
-
-<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_using</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="c1"># something using @r</span>
-</span><span class='line'>    <span class="c1"># ...</span>
-</span><span class='line'>    <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>改完测试，运行通过，那这篇博文怎么办&#8230;
-删还是不删，这是一个问题&#8230;</p>
-
-<h1>后记的后记</h1>
-
-<p>终于想出一个不用删掉这篇文章的理由，那就是通过参数传递资源的方式要灵活那么一点。书上的写法因为没有使用参数，所以using后的block必须定义在要立即使用资源的地方，当然C#中的using大约也是这样使用的。但如果资源是通过block的参数传递的，那么这个block就可以通过 <code>Proc.new</code> 或者 <code>lambda</code> 定义在任何地方。比如：</p>
-
-<figure class='code'><figcaption><span>using_define_anywhere.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_define_anywhere</span>
-</span><span class='line'>  <span class="nb">p</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">p</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1248,6 +1539,10 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a>
       </li>
     
@@ -1261,10 +1556,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     
       <li class="post">
         <a href="/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx/">OSX 中挂载 NTFS 分区</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2014/12/06/install-emacs-on-osx/">Install Emacs on OSX</a>
       </li>
     
   </ul>
