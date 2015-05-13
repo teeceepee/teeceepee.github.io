@@ -1,0 +1,304 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Explore RubyGems 1 - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="最近对 Ruby 的常用工具的使用以及实现原理产生了兴趣，因为前一阵子发布了一个试验性质的 gem，所以对 gem 相关的东西学习了一下。寻根溯源，找到了一个叫做 RubyGems 的概念。 Basics RubyGems 是什么？这几个字母的组合会在许多地方出现，Gemfile 的第一行一般是 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/05/12/explore-rubygems-1">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+<!--
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+-->
+  <script src="/javascripts/libs/jquery.min.js" type="text/javascript"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Explore RubyGems 1</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-12T21:58:00+08:00" pubdate data-updated="true">May 12<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>最近对 Ruby 的常用工具的使用以及实现原理产生了兴趣，因为前一阵子发布了一个试验性质的 gem，所以对 gem 相关的东西学习了一下。寻根溯源，找到了一个叫做 RubyGems 的概念。</p>
+
+<h1>Basics</h1>
+
+<p>RubyGems 是什么？这几个字母的组合会在许多地方出现，Gemfile 的第一行一般是 <code>source 'https://rubygems.org'</code> ，对应有一个域名为 rubygems.org 的网站，在一些很多年前的 Ruby 代码中会有 <code>require 'rubygems'</code> 。基本可以确定 rubygems.org 是 RubyGems 的官网，那就从官网入手吧。下面是<a href="http://guides.rubygems.org">官网教程</a>的说法：</p>
+
+<blockquote><p>The RubyGems software allows you to easily download, install, and use ruby software packages on your system. The software package is called a “gem” and contains a package Ruby application or library.</p></blockquote>
+
+<p>所以 RubyGems 是一套软件，这套软件的目标是让用户方便的下载、安装和使用 Ruby 的软件包。同时从这段话中可以看到，在 RubyGems 的范畴内，Ruby 的软件包叫做 gem。当然，有一些 Ruby 使用经验的人都知道还有一个叫 <code>gem</code> 的命令，这个命令当然也是 RubyGems 提供的。<code>gem</code> 命令是 RubyGems 提供的使用接口。RubyGems 需要一个中心服务器存储管理所有的 gem，默认使用的服务器地址就是 https://rubygems.org 。</p>
+
+<h2>被重写的 Kernel#require 方法</h2>
+
+<p><code>Kernel#require</code> 方法是用来干什么的？用来加载 Ruby 代码，它会从全局变量 <code>$LOAD_PATH</code> 中查找对应名字的文件并加载。然而上面的描述在 RubyGems 存在的情况下并不准确。RubyGems 重写了 <code>Kernel#require</code> 方法，扩展了它的功能。</p>
+
+<figure class='code'><figcaption><span>kernel_require.rb</span><a href='https://github.com/ruby/ruby/blob/trunk/lib/rubygems/core_ext/kernel_require.rb#L38'>link</a></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="c1">##</span>
+</span><span class='line'>  <span class="c1"># When RubyGems is required, Kernel#require is replaced with our own which</span>
+</span><span class='line'>  <span class="c1"># is capable of loading gems on demand.</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># When you call &lt;tt&gt;require &#39;x&#39;&lt;/tt&gt;, this is what happens:</span>
+</span><span class='line'>  <span class="c1"># * If the file can be loaded from the existing Ruby loadpath, it</span>
+</span><span class='line'>  <span class="c1">#   is.</span>
+</span><span class='line'>  <span class="c1"># * Otherwise, installed gems are searched for a file that matches.</span>
+</span><span class='line'>  <span class="c1">#   If it&#39;s found in gem &#39;y&#39;, that gem is activated (added to the</span>
+</span><span class='line'>  <span class="c1">#   loadpath).</span>
+</span><span class='line'>  <span class="c1">#</span>
+</span><span class='line'>  <span class="c1"># The normal &lt;tt&gt;require&lt;/tt&gt; functionality of returning false if</span>
+</span><span class='line'>  <span class="c1"># that file has already been loaded is preserved.</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">require</span> <span class="n">path</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>  <span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>从注释中可以看到，重写后的 <code>Kernel#require</code> 引入文件时会分两步：</p>
+
+<ol>
+<li>如果文件能在 $LOAD_PATH 中找到，那就引入它。</li>
+<li>否则，在所有已安装的 gem 中查找，如果找到，那么把对应的 gem 激活，也就是把该 gem 的 <code>lib</code> 目录加入 $LOAD_PATH。</li>
+</ol>
+
+
+<p>需要注意的是，<code>require</code> 的参数永远都对应一个文件名（可以省略 <code>.rb</code> 扩展名），而不是 gem 的名字。比如 awesome_print 这个 gem 的 <code>lib</code> 目录是这样的：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% tree -L 1 lib                                                              ➜
+</span><span class='line'>lib
+</span><span class='line'>├── ap.rb
+</span><span class='line'>├── awesome_print
+</span><span class='line'>└── awesome_print.rb
+</span><span class='line'>
+</span><span class='line'>1 directory, 2 files
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>那么可以用下面的方式引入：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;ap&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;ap.rb&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;awesome_print&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;awesome_print.rb&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>个人猜测，如果在其他 gem 中有同名的文件，可能会导致错误的引入。为了避免这样的问题，RubyGems 给出了一些命名和目录结构的建议。</p>
+
+<h2>概念</h2>
+
+<ul>
+<li>RubyGems，软件包管理软件</li>
+<li>gem，RubyGems 中的软件包</li>
+<li><code>gem</code>，RubyGems 提供的命令行接口</li>
+<li>https://rubygems.org ，RubyGems 的一个中心服务器</li>
+</ul>
+
+
+<h2>参考</h2>
+
+<p><a href="http://guides.rubygems.org">guides</a></p>
+
+<p><a href="http://guides.rubygems.org/rubygems-basics/#requiring-code">requiring_code</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-12T21:58:00+08:00" pubdate data-updated="true">May 12<span>th</span>, 2015</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/04/26/explore-carrierwave/" title="Previous Post: Explore CarrierWave">&laquo; Explore CarrierWave</a>
+      
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/02/06/a-swift-tour-note/">A Swift Tour 笔记</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

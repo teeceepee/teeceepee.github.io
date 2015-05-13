@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="这些天在看《ruby元编程》。其中有一个关于block的小测验，要模仿C#中的using关键字。 在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试， &hellip;">
+  <meta name="description" content="最近貌似docker这玩意儿比较火，有可能是虚拟化的新趋势。比较感兴趣，正好有时间就玩了玩，遇到一些问题就记下来了。 docker的官网做得不错，对于新手能很方便的找到所需信息。最让人喜欢的是那个Get started!交互式命令行教程，简直就是“手把手得教，一对一得学”。通过docker &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +66,174 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/12/28/install-docker-and-build-an-image/">安装docker并手工构建一个image</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-12-28T20:40:00+08:00" pubdate data-updated="true">Dec 28<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>最近貌似docker这玩意儿比较火，有可能是虚拟化的新趋势。比较感兴趣，正好有时间就玩了玩，遇到一些问题就记下来了。</p>
+
+<p><a href="https://www.docker.io">docker</a>的官网做得不错，对于新手能很方便的找到所需信息。最让人喜欢的是那个<a href="https://www.docker.io/gettingstarted/">Get started!</a>交互式命令行教程，简直就是“手把手得教，一对一得学”。通过<code>docker version</code>、<code>docker search tutorial</code>等一步步深入，看完教程就能熟悉个大概了。</p>
+
+<p>首先是安装docker。我的系统是Debian unstable，官方有Ubuntu的安装教程，我是按照Ubuntu的教程来的，但是并没有执行<code>sudo apt-get install linux-image-extra-\</code>uname -r&#8220;，因为Debian貌似没有linux-image-extra-*这个软件包。安装docker只用下面几行命令即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo sh -c <span class="s2">&quot;wget -qO- https://get.docker.io/gpg | apt-key add -&quot;</span>
+</span><span class='line'>
+</span><span class='line'>sudo sh -c <span class="s2">&quot;echo deb http://get.docker.io/ubuntu docker main &gt; /etc/apt/sources.list.d/docker.list&quot;</span>
+</span><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install lxc-docker
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>安装好docker我就按<a href="https://www.docker.io/gettingstarted/">Get started!</a>的命令操作，但不凑巧的是我在本机执行这些命令时可没有在线教程那么顺利，<code>docker pull ubuntu</code>并不能正常下载image，卡了一会儿输出个错误，超时了。原因猜也能猜个差不多，只能说句“F*K GFW”然后找其他办法了。还好我有个VPN，连上VPN，再试，结果还是不行，错误信息和不连VPN的还不太一样，具体原因还不清楚，再找其他解决方案吧。最终在一篇<a href="http://www.blogjava.net/yongboy/archive/2013/12/12/407498.html">博客</a>的评论里找到了一种解决方案，有一点麻烦，但确实可行。</p>
+
+<p>这个解决方案就是自己在本地构建一个image，然后导入到docker中，最终就和用<code>docker pull</code>从远程下载的效果一样了。该方案只能在Debian或Ubuntu上操作，制作的image也只能是Debian或Ubuntu。</p>
+
+<p>首先，确认已经安装了<code>debootstrap</code>这个工具，如果没安装用下面命令安装。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo apt-get update
+</span><span class='line'>sudo apt-get install debootstrap
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>debootstrap</code>貌似是一个构建Debian系统的工具，可以从指定的源获取deb安装包并安装。过程应该和安装系统差不多，只不过是将文件都安装到某一个目录下。根据<code>man debootstrap</code>，用法如下，用一句话解释就是：&#8221;debootstrap  bootstraps a basic Debian system of SUITE into TARGET from MIRROR by running SCRIPT.&#8221;</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>debootstrap <span class="o">[</span>OPTION...<span class="o">]</span>  SUITE TARGET <span class="o">[</span>MIRROR <span class="o">[</span>SCRIPT<span class="o">]]</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>TARGET</code>这里应该是写一个路径，最终构建的系统就在这个路径中。如果该路径不存在会自动创建。</p>
+
+<p><code>MIRROR</code>指定deb包的获取路径，与<code>sources.list</code>文件中写的路径一样，比如<code>http://mirrors.sohu.com/ubuntu/</code></p>
+
+<p><code>SUITE</code>是一个名字，起初我以为可以随便写，经过测试发现必须与<code>/usr/share/debootstrap/scripts/</code>目录中的文件名对应，并且需要与MIRROR对应，下面有说明。在我的机器上这个目录有如下内容：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>ls /usr/share/debootstrap/scripts/
+</span><span class='line'>breezy            intrepid          potato            stable
+</span><span class='line'>dapper            jaunty            precise           testing
+</span><span class='line'>edgy              jessie            quantal           trusty
+</span><span class='line'>etch              karmic            raring            unstable
+</span><span class='line'>etch-m68k         lenny             sarge             warty
+</span><span class='line'>feisty            lucid             sarge.buildd      warty.buildd
+</span><span class='line'>gutsy             maverick          sarge.fakechroot  wheezy
+</span><span class='line'>hardy             natty             saucy             woody
+</span><span class='line'>hoary             oldstable         sid               woody.buildd
+</span><span class='line'>hoary.buildd      oneiric           squeeze
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>显然，<code>SUITE</code>这一项只能写Debian或Ubuntu的代号。否则错误提示为：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo debootstrap abc target http://mirrors.sohu.com/ubuntu
+</span><span class='line'>E: No such script: /usr/share/debootstrap/scripts/abc
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>但只满足了本机的要求也不够，如果该suite在MIRROR对应源中不存在也无法执行，毕竟源中没有对应版本的deb包那什么也干不了。比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo debootstrap karmic target http://mirrors.sohu.com/ubuntu
+</span><span class='line'>I: Retrieving Release
+</span><span class='line'>E: Failed getting release file http://mirrors.sohu.com/ubuntu/dists/karmic/Release
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>例子，从<a href="http://mirrors.sohu.com/ubuntu">http://mirrors.sohu.com/ubuntu</a>下载并构建Ubuntu saucy 13.10，存放在<code>./saucy</code>中：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># Example:</span>
+</span><span class='line'>sudo debootstrap saucy ./saucy http://mirrors.sohu.com/ubuntu
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>构建好系统就可以用tar打包了。需要注意的是路径问题，要保证tar包里面的/目录要对应上面的TARGET目录。简单的办法就是先进入TARGET目录，再执行tar命令：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nb">cd</span> ./saucy
+</span><span class='line'>tar -cf ../ubuntu-saucy.tar .
+</span><span class='line'><span class="nb">cd</span> ..
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>有了tar包就可以导入到docker中了，用以下命令导入：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>cat ./ubuntu-saucy.tar | sudo docker import - saucy
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>docker的import子命令接受两种形式的参数，一种是URL，另一种是标准输入。上面的命令中的短横杠<code>-</code>表示从标准输入导入，<code>saucy</code>是给这个image起的名字，类似<code>learn/tutorial</code>、<code>ubuntu</code>。因为要从标准输入导入，所以用cat命令将tar包内容输出到标准输出，再用管道连到docker的标准输入。</p>
+
+<p>到这儿就完成了，可以试用一下刚导入的image</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>sudo docker run -i -t saucy cat /etc/issue
+</span><span class='line'>WARNING: IPv4 forwarding is disabled.
+</span><span class='line'>Ubuntu 13.10 <span class="se">\n</span> <span class="se">\l</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>最后一行就是image的输出。</p>
+
+<p>最后再说一遍“F*K GFW”，搞这么多就为了替代<code>docker pull</code>一行命令。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -380,6 +548,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
       </li>
     
@@ -393,10 +565,6 @@
     
       <li class="post">
         <a href="/blog/2015/02/06/a-swift-tour-note/">A Swift Tour 笔记</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx/">OSX 中挂载 NTFS 分区</a>
       </li>
     
   </ul>
