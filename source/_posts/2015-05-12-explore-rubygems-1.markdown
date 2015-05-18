@@ -3,7 +3,7 @@ layout: post
 title: "Explore RubyGems 1"
 date: 2015-05-12 21:58
 comments: true
-categories:
+categories: RubyGems
 ---
 
 最近对 Ruby 的常用工具的使用以及实现原理产生了兴趣，因为前一阵子发布了一个试验性质的 gem，所以对 gem 相关的东西学习了一下。寻根溯源，找到了一个叫做 RubyGems 的概念。
