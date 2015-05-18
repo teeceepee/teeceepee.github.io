@@ -9,7 +9,18 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="最近对 Ruby 的常用工具的使用以及实现原理产生了兴趣，因为前一阵子发布了一个试验性质的 gem，所以对 gem 相关的东西学习了一下。寻根溯源，找到了一个叫做 RubyGems 的概念。 Basics RubyGems 是什么？这几个字母的组合会在许多地方出现，Gemfile 的第一行一般是 &hellip;">
+  <meta name="description" content="What is a gem gem 是一种 Ruby 软件包，每个 gem 都有一个名字、版本和平台。名字和版本好理解，平台指的是 CPU 架构、操作系统及版本等信息。 gem 的目录结构 gem 的目录结构遵循一些约定，如下： 1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+11
+% tree &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -66,6 +77,419 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-05-16T14:42:00+08:00" pubdate data-updated="true">May 16<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h1>What is a gem</h1>
+
+<p>gem 是一种 Ruby 软件包，每个 gem 都有一个名字、版本和平台。名字和版本好理解，平台指的是 CPU 架构、操作系统及版本等信息。</p>
+
+<h2>gem 的目录结构</h2>
+
+<p>gem 的目录结构遵循一些约定，如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>% tree freewill
+</span><span class='line'>freewill/
+</span><span class='line'>├── bin/
+</span><span class='line'>│   └── freewill
+</span><span class='line'>├── lib/
+</span><span class='line'>│   └── freewill.rb
+</span><span class='line'>├── test/
+</span><span class='line'>│   └── test_freewill.rb
+</span><span class='line'>├── README
+</span><span class='line'>├── Rakefile
+</span><span class='line'>└── freewill.gemspec
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>lib</code> 目录里是 gem 的源代码。除此之外，最重要的就是 <code>.gemspec</code> 文件。<code>.gemspec</code> 文件包含了构建一个 gem 的所有的信息，包括 gem 的名字、版本、平台、包含的文件等。</p>
+
+<h2>Make Your Own Gem</h2>
+
+<p>构建一个 gem 可能是理解 gem 的最好方法。下面会从零开始创建一个示例 gem，我给这个 gem 取名为 <code>factory_boy</code> 。</p>
+
+<p>首先新建一个目录，下面所有的工作都在该目录内完成。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>% mkdir factory_boy/
+</span><span class='line'>% cd factory_boy</span></code></pre></td></tr></table></div></figure>
+
+
+<p>一个 gem 肯定要包含一些代码的，按照约定，这些代码应该放到 <code>lib</code> 目录中，而且 <code>lib</code> 目录中应该有一个和 gem 同名的 <code>.rb</code> 文件。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>% cat lib/factory_boy.rb
+</span><span class='line'>module FactoryBoy
+</span><span class='line'>  def self.hi
+</span><span class='line'>    puts "Hello, I'm a factory boy."
+</span><span class='line'>  end
+</span><span class='line'>end
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>好，现在 gem 的代码已经有了，还需要一个 <code>.gemspec</code> 文件，把它命名为 <code>factory_boy.gemspec</code>。</p>
+
+<figure class='code'><figcaption><span>factory_boy.gemspec</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="ss">Gem</span><span class="p">:</span><span class="ss">:Specification</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">spec</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">name</span>        <span class="o">=</span> <span class="s1">&#39;factory_boy&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">version</span>     <span class="o">=</span> <span class="s1">&#39;0.0.1&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">date</span>        <span class="o">=</span> <span class="s1">&#39;2015-05-16&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">summary</span>     <span class="o">=</span> <span class="s2">&quot;I am a factory boy.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;A factory boy want to meet a factory girl.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">authors</span>     <span class="o">=</span> <span class="o">[</span><span class="s2">&quot;Factory Boss&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">email</span>       <span class="o">=</span> <span class="s1">&#39;fb@example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">files</span>       <span class="o">=</span> <span class="o">[</span><span class="s2">&quot;lib/factory_boy.rb&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">homepage</span>    <span class="o">=</span> <span class="s1">&#39;http://fb.example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">license</span>     <span class="o">=</span> <span class="s1">&#39;MIT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>factory_boy.gemspec</code> 文件描述了该 gem 的许多信息，比较重要的是通过 <code>spec.files = ...</code> 指定 gem 包含的文件，如果没有指定该项，构建出的 gem 是一个不包含任何文件的空 gem。</p>
+
+<p>现在就可以构建一个最简单的 gem 了, <code>gem build</code> 命令可以方便的完成这个操作，将对应的 <code>.gemspec</code> 文件作为参数即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% gem build ./factory_boy.gemspec
+</span><span class='line'>  Successfully built RubyGem
+</span><span class='line'>  Name: factory_boy
+</span><span class='line'>  Version: 0.0.1
+</span><span class='line'>  File: factory_boy-0.0.1.gem
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>gem build</code> 命令会将构建好的 gem 放在当前目录，文件名中包含了 gem 的名字和版本。要测试这个 gem 是否能正常工作，需要先安装，然后就可以用 irb 或其他方式测试了。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% gem install ./factory_boy-0.0.1.gem
+</span><span class='line'>Successfully installed factory_boy-0.0.1
+</span><span class='line'>1 gem installed
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'>% irb
+</span><span class='line'>irb<span class="o">(</span>main<span class="o">)</span>:001:0&gt; require <span class="s1">&#39;factory_boy&#39;</span>
+</span><span class='line'><span class="o">=</span>&gt; <span class="nb">true</span>
+</span><span class='line'>irb<span class="o">(</span>main<span class="o">)</span>:002:0&gt; FactoryBoy.hi
+</span><span class='line'>Hello, I<span class="err">&#39;</span>m a factory boy.
+</span><span class='line'><span class="o">=</span>&gt; nil
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>看上去不错，如果想要将自己编写的 gem 发布到 rubygems.org 上，需要用到 <code>gem push</code> 命令。</p>
+
+<h2>更常见的目录结构</h2>
+
+<p>通常一个 gem 会包含多个文件，推荐的做法是在 <code>lib</code> 目录下建立一个与 gem 同名的目录，文件都放到该目录内。使用 <code>require</code> 时会在 <code>lib</code> 目录搜索文件，所以一般 <code>lib</code> 目录下只有一个与 gem 同名的 <code>.rb</code> 文件。我们可以把刚才的 gem 改成如下的目录结构：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% tree lib
+</span><span class='line'>lib
+</span><span class='line'>├── factory_boy
+</span><span class='line'>│   ├── hi.rb
+</span><span class='line'>│   └── version.rb
+</span><span class='line'>└── factory_boy.rb
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>文件内容改为如下：</p>
+
+<figure class='code'><figcaption><span>factory_boy/hi.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">FactoryBoy</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nc">self</span><span class="o">.</span><span class="nf">hi</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s2">&quot;Hello, I&#39;m a factory boy.&quot;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>factory_boy/version.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">FactoryBoy</span>
+</span><span class='line'>  <span class="no">VERSION</span> <span class="o">=</span> <span class="s1">&#39;0.0.2&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>factory_boy.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;factory_boy/hi&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;factory_boy/version&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">module</span> <span class="nn">FactoryBoy</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>把 gem 的实现都放在 <code>lib/factory_boy</code> 目录中，然后在 <code>factory_boy.rb</code> 中引入这些文件。注意 <code>factory_boy.rb</code> 中的 <code>require</code> 方法，RubyGems 会正确设置 $LOAD_PATH，确保能找到 <code>lib/factory_boy</code> 目录下的文件。</p>
+
+<p>改好之后需要再次测试一下，这次换另一种测试方法，不需要安装这个 gem。当然在这之前需要用 <code>gem uninstall factory_boy</code> 卸载之前安装的 gem。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% irb -Ilib -rfactory_boy
+</span><span class='line'>irb<span class="o">(</span>main<span class="o">)</span>:001:0&gt; FactoryBoy::VERSION
+</span><span class='line'><span class="o">=</span>&gt; <span class="s2">&quot;0.0.2&quot;</span>
+</span><span class='line'>irb<span class="o">(</span>main<span class="o">)</span>:002:0&gt; FactoryBoy.hi
+</span><span class='line'>Hello, I<span class="err">&#39;</span>m a factory boy.
+</span><span class='line'><span class="o">=</span>&gt; nil
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的 irb 命令会将 <code>lib</code> 目录加入 $LOAD_PATH，然后执行 <code>require 'factory_boy'</code>，因此进入 irb 就可以直接使用 <code>FactoryBoy</code> 这个模块了。</p>
+
+<p>测试看上去没有问题，这时可以构建新的 gem 了。不过构建之前需要对 <code>.gemspec</code> 文件做一些修改，因为增加了新的源文件，所以 <code>spec.files</code> 这一项必须要修改。每次增加或删除文件都要修改 <code>.gemspec</code> 文件，不仅麻烦，而且容易忘记修改。使用 <code>Dir.[]</code> 方法是一个不错的选择。修改后的 <code>.gemspec</code> 文件如下：</p>
+
+<figure class='code'><figcaption><span>factory_boy.gemspec</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">lib</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../lib&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span> <span class="k">unless</span> <span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;factory_boy/version&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Gem</span><span class="p">:</span><span class="ss">:Specification</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">spec</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">name</span>        <span class="o">=</span> <span class="s1">&#39;factory_boy&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">version</span>     <span class="o">=</span> <span class="ss">FactoryBoy</span><span class="p">:</span><span class="ss">:VERSION</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">date</span>        <span class="o">=</span> <span class="s1">&#39;2015-05-16&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">summary</span>     <span class="o">=</span> <span class="s2">&quot;I am a factory boy.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;A factory boy want to meet a factory girl.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">authors</span>     <span class="o">=</span> <span class="o">[</span><span class="s2">&quot;Factory Boss&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">email</span>       <span class="o">=</span> <span class="s1">&#39;fb@example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">files</span>       <span class="o">=</span> <span class="no">Dir</span><span class="o">[</span><span class="s1">&#39;lib/**/*&#39;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">homepage</span>    <span class="o">=</span> <span class="s1">&#39;http://fb.example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">license</span>     <span class="o">=</span> <span class="s1">&#39;MIT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>主要有两方面的修改，第一，使用 <code>Dir['lib/**/*']</code> 获得 <code>lib</code> 目录下的所有文件，这样增加或删除文件时就不需要修改 <code>.gemspec</code> 文件了。第二，gem 的版本通过 <code>factory_boy/version.rb</code> 文件获得，这样保证修改版本时只需修改一处代码即可，满足 DRY 的原则，而且这也是多数 gem 采用的方式。</p>
+
+<h2>增加可执行文件</h2>
+
+<p>gem 除了能提供 Ruby 代码，还可以提供一个或多个可执行文件。比如常见的 <code>rake</code> <code>bundle</code> <code>rails</code> 命令都是对应的 gem 提供的可执行文件。向一个 gem 中添加可执行文件非常简单，只要在 gem 目录中创建可执行文件，然后在 <code>.gemspec</code> 文件中声明就好了。构建 gem 时，会从 <code>spec.bindir</code> 对应的目录中查找 <code>spec.executables</code> 中对应的文件作为可执行文件。 <code>spec.bindir</code> 的默认值是 <code>bin</code> ，但是 Bundler 1.8 <a href="http://bundler.io/blog/2015/03/20/moving-bins-to-exe.html">建议</a>改为 <code>exe</code>，因为 bin 目录是存放 Bundler 的 binstubs 的目录。下面的例子遵循 Bundler 的建议，创建 <code>exe/factory_boy</code> 文件作为可执行文件，同时修改 <code>.gemspec</code> 文件。</p>
+
+<figure class='code'><figcaption><span>exe/factory_boy</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1">#!/usr/bin/env ruby</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;factory_boy&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">FactoryBoy</span><span class="o">.</span><span class="n">hi</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span>factory_boy.gemspec</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">lib</span> <span class="o">=</span> <span class="no">File</span><span class="o">.</span><span class="n">expand_path</span><span class="p">(</span><span class="s1">&#39;../lib&#39;</span><span class="p">,</span> <span class="bp">__FILE__</span><span class="p">)</span>
+</span><span class='line'><span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">unshift</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span> <span class="k">unless</span> <span class="vg">$LOAD_PATH</span><span class="o">.</span><span class="n">include?</span><span class="p">(</span><span class="n">lib</span><span class="p">)</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;factory_boy/version&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="ss">Gem</span><span class="p">:</span><span class="ss">:Specification</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">spec</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">name</span>        <span class="o">=</span> <span class="s1">&#39;factory_boy&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">version</span>     <span class="o">=</span> <span class="ss">FactoryBoy</span><span class="p">:</span><span class="ss">:VERSION</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">date</span>        <span class="o">=</span> <span class="s1">&#39;2015-05-16&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">summary</span>     <span class="o">=</span> <span class="s2">&quot;I am a factory boy.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="s2">&quot;A factory boy want to meet a factory girl.&quot;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">authors</span>     <span class="o">=</span> <span class="o">[</span><span class="s2">&quot;Factory Boss&quot;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">email</span>       <span class="o">=</span> <span class="s1">&#39;fb@example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">files</span>       <span class="o">=</span> <span class="no">Dir</span><span class="o">[</span><span class="s1">&#39;lib/**/*&#39;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">bindir</span>      <span class="o">=</span> <span class="s1">&#39;exe&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">executables</span> <span class="o">=</span> <span class="o">[</span><span class="s1">&#39;factory_boy&#39;</span><span class="o">]</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">homepage</span>    <span class="o">=</span> <span class="s1">&#39;http://fb.example.com&#39;</span>
+</span><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">license</span>     <span class="o">=</span> <span class="s1">&#39;MIT&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>经过这样的修改，<code>gem build</code> 构建出的 gem 就包含了可执行文件，在安装后就可以在命令行中使用了。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% gem build factory_boy.gemspec
+</span><span class='line'>% gem install ./factory_boy-0.0.2.gem
+</span><span class='line'>% factory_boy
+</span><span class='line'>Hello, I<span class="err">&#39;</span>m a factory boy.
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>增加依赖 gem</h2>
+
+<p>gem 之间是有依赖关系的，如果自己编写的 gem 需要依赖其他 gem，只需在 <code>.gemspec</code> 文件中声明依赖的 gem 名称和版本即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'>  <span class="n">spec</span><span class="o">.</span><span class="n">add_dependency</span> <span class="s1">&#39;factory_girl&#39;</span><span class="p">,</span> <span class="s1">&#39;~&gt; 4.5&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这样在构建 gem 时依赖关系会保存在 gem 包中，安装时会保证依赖的 gem 已经安装。</p>
+
+<h2>gem 包的文件格式</h2>
+
+<p>gem 包其实是一个 tar 包，用下面的命令可以查看。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% file factory_boy-0.0.2.gem
+</span><span class='line'>factory_boy-0.0.2.gem: POSIX tar archive
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>既然是 tar 包，就可以展开查看一下里面的内容。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>% mkdir tmp
+</span><span class='line'>% <span class="nb">cd </span>tmp
+</span><span class='line'>
+</span><span class='line'>% tar -xvf ../factory_boy-0.0.2.gem
+</span><span class='line'>x metadata.gz
+</span><span class='line'>x data.tar.gz
+</span><span class='line'>x checksums.yaml.gz
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到，tar 包里面有三个文件，这三个文件都是用 gzip 压缩过的，其中 <code>checksum.yaml.gz</code> 的内容是另外两个压缩文件的校验和，<code>metadata.gz</code> 的内容是该 gem 的一些元信息，包括 gem 名称、版本、依赖关系等。<code>data.tar.gz</code> 是所有 gem 的文件，安装 gem 时会把这些文件安装到对应路径。</p>
+
+<h2>参考</h2>
+
+<p><a href="http://guides.rubygems.org/make-your-own-gem/">make_your_own_gem</a></p>
+
+<p><a href="http://bundler.io/blog/2015/03/20/moving-bins-to-exe.html">bundler_moves_bins_to_exe</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1410,95 +1834,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/12/30/remove-unnecessary-auto-start-services/">Debian禁用不必要的开机自启动服务</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-12-30T20:00:00+08:00" pubdate data-updated="true">Dec 30<span>th</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>经常为了尝试安装各种软件，比如Mongodb、Redis、Nginx等，但实际上用到的时候不多。这些软件都是用apt-get方式安装的，安装完默认都是开机启动的，慢慢开始影响开机启动的速度了。不让他们自启动可以直接去/etc/rc?.d修改，把S改成K就可以，但是手动改太麻烦了。Debian有一个命令，但是每次改都要现查，老是记不住。写一篇博客加深一下印象吧。</p>
-
-<p>这个命令是<code>update-rc.d</code>，看名字就知道是修改rc?.d的。根据<code>man update-rc.d</code>，用法如下：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> <span class="o">[</span>-f<span class="o">]</span> name remove
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name defaults
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name
-</span><span class='line'>
-</span><span class='line'>update-rc.d <span class="o">[</span>-n<span class="o">]</span> name disable|enable <span class="o">[</span> S|2|3|4|5 <span class="o">]</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>用到的是最后一个，如果最后面的运行级别不指定则修改所有级别。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># 禁止Redis开机启动</span>
-</span><span class='line'>sudo update-rc.d redis-server disable
-</span><span class='line'><span class="c"># Redis开机启动</span>
-</span><span class='line'>sudo update-rc.d redis-server <span class="nb">enable</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>写这篇博客时顺便学会了一个查看所有服务运行状态的命令，+表示正在运行，-表示没有运行，?表示不详（？），可能是不支持用status查询状态吧。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>sudo service --status-all
-</span><span class='line'><span class="c"># ==&gt;</span>
-</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpi-fakekey
-</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  acpi-support
-</span><span class='line'> <span class="o">[</span> + <span class="o">]</span>  acpid
-</span><span class='line'> <span class="o">[</span> ? <span class="o">]</span>  alsa-utils
-</span><span class='line'> <span class="o">[</span> - <span class="o">]</span>  anacron
-</span><span class='line'>...
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1514,6 +1849,10 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
       </li>
     
@@ -1527,10 +1866,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     
       <li class="post">
         <a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/02/06/a-swift-tour-note/">A Swift Tour 笔记</a>
       </li>
     
   </ul>
