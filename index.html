@@ -107,7 +107,7 @@
   </header>
 
 
-  <div class="entry-content"><p>MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 <code>identity</code>，<code>convert</code> ，MiniMagick 就能正常工作。</p>
+  <div class="entry-content"><p>MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 <code>identify</code>，<code>convert</code> ，MiniMagick 就能正常工作。</p>
 
 <p>只要涉及到命令调用，就一定会有命令查找路径的问题。MiniMagick 默认只使用命令名来调用命令，也就是从环境变量的 PATH 中查找。这一般没有问题，但如果 ImageMagick 的可执行程序没有安装在默认的 PATH 中，那么可以通过 <code>MiniMagick.cli_path=</code> 这个方法来指定命令查找的路径。例如在 Rails 中，可以创建一个 <code>config/initializers/mini_magick.rb</code> 初始化文件，写入如下内容：</p>
 
