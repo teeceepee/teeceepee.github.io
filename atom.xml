@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2015-05-18T12:05:50+08:00</updated>
+  <updated>2015-09-23T22:14:49+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,161 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[设置 MiniMagick 查找命令的路径]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/09/23/set-minimagick-command-path/"/>
+    <updated>2015-09-23T21:21:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/09/23/set-minimagick-command-path</id>
+    <content type="html"><![CDATA[<p>MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 <code>identity</code>，<code>convert</code> ，MiniMagick 就能正常工作。</p>
+
+<p>只要涉及到命令调用，就一定会有命令查找路径的问题。MiniMagick 默认只使用命令名来调用命令，也就是从环境变量的 PATH 中查找。这一般没有问题，但如果 ImageMagick 的可执行程序没有安装在默认的 PATH 中，那么可以通过 <code>MiniMagick.cli_path=</code> 这个方法来指定命令查找的路径。例如在 Rails 中，可以创建一个 <code>config/initializers/mini_magick.rb</code> 初始化文件，写入如下内容：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/initializers/mini_magick.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">MiniMagick</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># 如果不能正常调用 ImageMagick 的命令，则使用指定的路径。</span>
+</span><span class='line'>  <span class="k">begin</span>
+</span><span class='line'>    <span class="c1"># 返回命令 `identify -version` 输出，如果查找不到命令则会抛出异常。</span>
+</span><span class='line'>    <span class="no">MiniMagick</span><span class="o">.</span><span class="n">cli_version</span>
+</span><span class='line'>  <span class="k">rescue</span>
+</span><span class='line'>    <span class="n">config</span><span class="o">.</span><span class="n">cli_path</span><span class="o">=</span> <span class="s1">&#39;/root/.linuxbrew/bin&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的初始化文件首先尝试调用 ImageMagick 的命令，如果调用失败则使用指定的路径查找命令。</p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Bootstrap 输入框效果实现]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/07/27/bootstrap-inputs-effect/"/>
+    <updated>2015-07-27T21:42:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/07/27/bootstrap-inputs-effect</id>
+    <content type="html"><![CDATA[<p>当我第一次用 <a href="http://getbootstrap.com/">Bootstrap</a> 时，印象最深的是加在表单的文本输入框上的效果。浅灰的圆角边框，似有似无的边框阴影，以及获得焦点时的蓝色边框效果。但是一直以来我并不知道这些效果是如何实现的，最近终于下决心研究一下 Bootstrap，看看它是如何写成的。首先想到的便是输入框的效果。</p>
+
+<p>我是用 <code>bootstrap-sass</code> 这个 Ruby 的 gem 研究 Bootstrap 源码的。与输入框相关的代码在 <code>assets/stylesheets/bootstrap/_forms.scss</code>。</p>
+
+<p>查看网页的源码发现，实现这些输入框效果的是 <code>.form-control</code> 这个 class。<code>.form-control</code> 的源码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="nc">.form-control</span> <span class="p">{</span>
+</span><span class='line'>  <span class="na">display</span><span class="o">:</span> <span class="no">block</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">width</span><span class="o">:</span> <span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">height</span><span class="o">:</span> <span class="nv">$input-height-base</span><span class="p">;</span> <span class="c1">// Make inputs at least the height of their button counterpart (base line-height + padding + border)</span>
+</span><span class='line'>  <span class="na">padding</span><span class="o">:</span> <span class="nv">$padding-base-vertical</span> <span class="nv">$padding-base-horizontal</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">font-size</span><span class="o">:</span> <span class="nv">$font-size-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">line-height</span><span class="o">:</span> <span class="nv">$line-height-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">color</span><span class="o">:</span> <span class="nv">$input-color</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-image</span><span class="o">:</span> <span class="no">none</span><span class="p">;</span> <span class="c1">// Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214</span>
+</span><span class='line'>  <span class="na">border</span><span class="o">:</span> <span class="mi">1</span><span class="kt">px</span> <span class="no">solid</span> <span class="nv">$input-border</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">border-radius</span><span class="o">:</span> <span class="nv">$input-border-radius</span><span class="p">;</span> <span class="c1">// Note: This has no effect on &lt;select&gt;s in some browsers, due to the limited stylability of &lt;select&gt;s in CSS.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Customize the `:focus` state to imitate native WebKit styles.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> form-control-focus</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Placeholder</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> placeholder</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Disabled and read-only inputs</span>
+</span><span class='line'>  <span class="c1">//</span>
+</span><span class='line'>  <span class="c1">// HTML5 says that controls under a fieldset &gt; legend:first-child won&#39;t be</span>
+</span><span class='line'>  <span class="c1">// disabled if the fieldset is disabled. Due to implementation difficulty, we</span>
+</span><span class='line'>  <span class="c1">// don&#39;t honor that edge case; we style them as disabled anyway.</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">readonly</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg-disabled</span><span class="p">;</span>
+</span><span class='line'>    <span class="na">opacity</span><span class="o">:</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">// iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">cursor</span><span class="o">:</span> <span class="nv">$cursor-disabled</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// [converter] extracted textarea&amp; to textarea.form-control</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>圆角用 <code>border-radius</code> 属性实现，边框颜色是在 <code>border</code> 属性中设置的。最重要的是下面两行：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'><span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用到了 Sass 的 Mixin 功能，实际的实现就是设置 <code>box-shadow</code> 和 <code>transition</code> 属性。也就是说，输入框的效果主要是靠这两个属性实现的。</p>
+
+<h2><code>box-shadow</code></h2>
+
+<p><code>box-shadow</code> 用来设置盒阴影。</p>
+
+<h2><code>transition</code></h2>
+
+<p><code>transition</code> 用来设置过渡效果。</p>
+
+<p>TODO uncompleted</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Explore RubyGems 2]]></title>

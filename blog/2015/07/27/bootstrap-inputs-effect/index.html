@@ -1,0 +1,319 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Bootstrap 输入框效果实现 - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="当我第一次用 Bootstrap 时，印象最深的是加在表单的文本输入框上的效果。浅灰的圆角边框，似有似无的边框阴影，以及获得焦点时的蓝色边框效果。但是一直以来我并不知道这些效果是如何实现的，最近终于下决心研究一下 Bootstrap，看看它是如何写成的。首先想到的便是输入框的效果。 我是用 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/07/27/bootstrap-inputs-effect">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+<!--
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+-->
+  <script src="/javascripts/libs/jquery.min.js" type="text/javascript"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-67854007-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Bootstrap 输入框效果实现</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-27T21:42:00+08:00" pubdate data-updated="true">Jul 27<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><p>当我第一次用 <a href="http://getbootstrap.com/">Bootstrap</a> 时，印象最深的是加在表单的文本输入框上的效果。浅灰的圆角边框，似有似无的边框阴影，以及获得焦点时的蓝色边框效果。但是一直以来我并不知道这些效果是如何实现的，最近终于下决心研究一下 Bootstrap，看看它是如何写成的。首先想到的便是输入框的效果。</p>
+
+<p>我是用 <code>bootstrap-sass</code> 这个 Ruby 的 gem 研究 Bootstrap 源码的。与输入框相关的代码在 <code>assets/stylesheets/bootstrap/_forms.scss</code>。</p>
+
+<p>查看网页的源码发现，实现这些输入框效果的是 <code>.form-control</code> 这个 class。<code>.form-control</code> 的源码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="nc">.form-control</span> <span class="p">{</span>
+</span><span class='line'>  <span class="na">display</span><span class="o">:</span> <span class="no">block</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">width</span><span class="o">:</span> <span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">height</span><span class="o">:</span> <span class="nv">$input-height-base</span><span class="p">;</span> <span class="c1">// Make inputs at least the height of their button counterpart (base line-height + padding + border)</span>
+</span><span class='line'>  <span class="na">padding</span><span class="o">:</span> <span class="nv">$padding-base-vertical</span> <span class="nv">$padding-base-horizontal</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">font-size</span><span class="o">:</span> <span class="nv">$font-size-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">line-height</span><span class="o">:</span> <span class="nv">$line-height-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">color</span><span class="o">:</span> <span class="nv">$input-color</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-image</span><span class="o">:</span> <span class="no">none</span><span class="p">;</span> <span class="c1">// Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214</span>
+</span><span class='line'>  <span class="na">border</span><span class="o">:</span> <span class="mi">1</span><span class="kt">px</span> <span class="no">solid</span> <span class="nv">$input-border</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">border-radius</span><span class="o">:</span> <span class="nv">$input-border-radius</span><span class="p">;</span> <span class="c1">// Note: This has no effect on &lt;select&gt;s in some browsers, due to the limited stylability of &lt;select&gt;s in CSS.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Customize the `:focus` state to imitate native WebKit styles.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> form-control-focus</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Placeholder</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> placeholder</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Disabled and read-only inputs</span>
+</span><span class='line'>  <span class="c1">//</span>
+</span><span class='line'>  <span class="c1">// HTML5 says that controls under a fieldset &gt; legend:first-child won&#39;t be</span>
+</span><span class='line'>  <span class="c1">// disabled if the fieldset is disabled. Due to implementation difficulty, we</span>
+</span><span class='line'>  <span class="c1">// don&#39;t honor that edge case; we style them as disabled anyway.</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">readonly</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg-disabled</span><span class="p">;</span>
+</span><span class='line'>    <span class="na">opacity</span><span class="o">:</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">// iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">cursor</span><span class="o">:</span> <span class="nv">$cursor-disabled</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// [converter] extracted textarea&amp; to textarea.form-control</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>圆角用 <code>border-radius</code> 属性实现，边框颜色是在 <code>border</code> 属性中设置的。最重要的是下面两行：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'><span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用到了 Sass 的 Mixin 功能，实际的实现就是设置 <code>box-shadow</code> 和 <code>transition</code> 属性。也就是说，输入框的效果主要是靠这两个属性实现的。</p>
+
+<h2><code>box-shadow</code></h2>
+
+<p><code>box-shadow</code> 用来设置盒阴影。</p>
+
+<h2><code>transition</code></h2>
+
+<p><code>transition</code> 用来设置过渡效果。</p>
+
+<p>TODO uncompleted</p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-27T21:42:00+08:00" pubdate data-updated="true">Jul 27<span>th</span>, 2015</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/05/16/explore-rubygems-2/" title="Previous Post: Explore RubyGems 2">&laquo; Explore RubyGems 2</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/09/23/set-minimagick-command-path/" title="Next Post: 设置 MiniMagick 查找命令的路径">设置 MiniMagick 查找命令的路径 &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2015 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

@@ -9,18 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="What is a gem gem 是一种 Ruby 软件包，每个 gem 都有一个名字、版本和平台。名字和版本好理解，平台指的是 CPU 架构、操作系统及版本等信息。 gem 的目录结构 gem 的目录结构遵循一些约定，如下： 1
-2
-3
-4
-5
-6
-7
-8
-9
-10
-11
-% tree &hellip;">
+  <meta name="description" content="MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -45,6 +34,18 @@
 <link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
 
   
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-67854007-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
 
 </head>
 
@@ -77,6 +78,215 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-09-23T21:21:00+08:00" pubdate data-updated="true">Sep 23<span>rd</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 <code>identity</code>，<code>convert</code> ，MiniMagick 就能正常工作。</p>
+
+<p>只要涉及到命令调用，就一定会有命令查找路径的问题。MiniMagick 默认只使用命令名来调用命令，也就是从环境变量的 PATH 中查找。这一般没有问题，但如果 ImageMagick 的可执行程序没有安装在默认的 PATH 中，那么可以通过 <code>MiniMagick.cli_path=</code> 这个方法来指定命令查找的路径。例如在 Rails 中，可以创建一个 <code>config/initializers/mini_magick.rb</code> 初始化文件，写入如下内容：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/initializers/mini_magick.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">MiniMagick</span><span class="o">.</span><span class="n">configure</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="c1"># 如果不能正常调用 ImageMagick 的命令，则使用指定的路径。</span>
+</span><span class='line'>  <span class="k">begin</span>
+</span><span class='line'>    <span class="c1"># 返回命令 `identify -version` 输出，如果查找不到命令则会抛出异常。</span>
+</span><span class='line'>    <span class="no">MiniMagick</span><span class="o">.</span><span class="n">cli_version</span>
+</span><span class='line'>  <span class="k">rescue</span>
+</span><span class='line'>    <span class="n">config</span><span class="o">.</span><span class="n">cli_path</span><span class="o">=</span> <span class="s1">&#39;/root/.linuxbrew/bin&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的初始化文件首先尝试调用 ImageMagick 的命令，如果调用失败则使用指定的路径查找命令。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-07-27T21:42:00+08:00" pubdate data-updated="true">Jul 27<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>当我第一次用 <a href="http://getbootstrap.com/">Bootstrap</a> 时，印象最深的是加在表单的文本输入框上的效果。浅灰的圆角边框，似有似无的边框阴影，以及获得焦点时的蓝色边框效果。但是一直以来我并不知道这些效果是如何实现的，最近终于下决心研究一下 Bootstrap，看看它是如何写成的。首先想到的便是输入框的效果。</p>
+
+<p>我是用 <code>bootstrap-sass</code> 这个 Ruby 的 gem 研究 Bootstrap 源码的。与输入框相关的代码在 <code>assets/stylesheets/bootstrap/_forms.scss</code>。</p>
+
+<p>查看网页的源码发现，实现这些输入框效果的是 <code>.form-control</code> 这个 class。<code>.form-control</code> 的源码如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="nc">.form-control</span> <span class="p">{</span>
+</span><span class='line'>  <span class="na">display</span><span class="o">:</span> <span class="no">block</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">width</span><span class="o">:</span> <span class="mi">100</span><span class="kt">%</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">height</span><span class="o">:</span> <span class="nv">$input-height-base</span><span class="p">;</span> <span class="c1">// Make inputs at least the height of their button counterpart (base line-height + padding + border)</span>
+</span><span class='line'>  <span class="na">padding</span><span class="o">:</span> <span class="nv">$padding-base-vertical</span> <span class="nv">$padding-base-horizontal</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">font-size</span><span class="o">:</span> <span class="nv">$font-size-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">line-height</span><span class="o">:</span> <span class="nv">$line-height-base</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">color</span><span class="o">:</span> <span class="nv">$input-color</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">background-image</span><span class="o">:</span> <span class="no">none</span><span class="p">;</span> <span class="c1">// Reset unusual Firefox-on-Android default style; see https://github.com/necolas/normalize.css/issues/214</span>
+</span><span class='line'>  <span class="na">border</span><span class="o">:</span> <span class="mi">1</span><span class="kt">px</span> <span class="no">solid</span> <span class="nv">$input-border</span><span class="p">;</span>
+</span><span class='line'>  <span class="na">border-radius</span><span class="o">:</span> <span class="nv">$input-border-radius</span><span class="p">;</span> <span class="c1">// Note: This has no effect on &lt;select&gt;s in some browsers, due to the limited stylability of &lt;select&gt;s in CSS.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Customize the `:focus` state to imitate native WebKit styles.</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> form-control-focus</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Placeholder</span>
+</span><span class='line'>  <span class="k">@include</span><span class="nd"> placeholder</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// Disabled and read-only inputs</span>
+</span><span class='line'>  <span class="c1">//</span>
+</span><span class='line'>  <span class="c1">// HTML5 says that controls under a fieldset &gt; legend:first-child won&#39;t be</span>
+</span><span class='line'>  <span class="c1">// disabled if the fieldset is disabled. Due to implementation difficulty, we</span>
+</span><span class='line'>  <span class="c1">// don&#39;t honor that edge case; we style them as disabled anyway.</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">readonly</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">background-color</span><span class="o">:</span> <span class="nv">$input-bg-disabled</span><span class="p">;</span>
+</span><span class='line'>    <span class="na">opacity</span><span class="o">:</span> <span class="mi">1</span><span class="p">;</span> <span class="c1">// iOS fix for unreadable disabled content; see https://github.com/twbs/bootstrap/issues/11655</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">&amp;</span><span class="o">[</span><span class="nt">disabled</span><span class="o">],</span>
+</span><span class='line'>  <span class="nt">fieldset</span><span class="o">[</span><span class="nt">disabled</span><span class="o">]</span> <span class="k">&amp;</span> <span class="p">{</span>
+</span><span class='line'>    <span class="na">cursor</span><span class="o">:</span> <span class="nv">$cursor-disabled</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="c1">// [converter] extracted textarea&amp; to textarea.form-control</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>圆角用 <code>border-radius</code> 属性实现，边框颜色是在 <code>border</code> 属性中设置的。最重要的是下面两行：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='scss'><span class='line'><span class="k">@include</span><span class="nd"> box-shadow</span><span class="p">(</span><span class="no">inset</span> <span class="mi">0</span> <span class="mi">1</span><span class="kt">px</span> <span class="mi">1</span><span class="kt">px</span> <span class="nf">rgba</span><span class="p">(</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,</span><span class="mi">0</span><span class="o">,.</span><span class="mi">075</span><span class="p">));</span>
+</span><span class='line'><span class="k">@include</span><span class="nd"> transition</span><span class="p">(</span><span class="no">border-color</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="o">,</span> <span class="n">box-shadow</span> <span class="n">ease-in-out</span> <span class="mf">.15</span><span class="kt">s</span><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>用到了 Sass 的 Mixin 功能，实际的实现就是设置 <code>box-shadow</code> 和 <code>transition</code> 属性。也就是说，输入框的效果主要是靠这两个属性实现的。</p>
+
+<h2><code>box-shadow</code></h2>
+
+<p><code>box-shadow</code> 用来设置盒阴影。</p>
+
+<h2><code>transition</code></h2>
+
+<p><code>transition</code> 用来设置过渡效果。</p>
+
+<p>TODO uncompleted</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1555,285 +1765,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/11/15/explore-active-support-1/">Explore ActiveSupport 1</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-11-15T20:57:00+08:00" pubdate data-updated="true">Nov 15<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Ruby on Rails 框架的 Active Support 组件提供了很多方便使用的方法，有些方法是通过 Monkey Patch 的方式添加到 Ruby 原有的类中的。</p>
-
-<h2>Object#blank?</h2>
-
-<p>只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到 Object 类，还添加到了 NilClass，FalseClass，TrueClass，String，Numeric，Array，Hash 等类中。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/core_ext/object/blank.rb</span>
-</span><span class='line'><span class="k">class</span> <span class="nc">Object</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
-</span><span class='line'>    <span class="nb">respond_to?</span><span class="p">(</span><span class="ss">:empty?</span><span class="p">)</span> <span class="p">?</span> <span class="o">!!</span><span class="n">empty?</span> <span class="p">:</span> <span class="o">!</span><span class="nb">self</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">String</span>
-</span><span class='line'>  <span class="no">BLANK_RE</span> <span class="o">=</span> <span class="sr">/\A[[:space:]]*\z/</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">blank?</span>
-</span><span class='line'>    <span class="no">BLANK_RE</span> <span class="o">===</span> <span class="nb">self</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>判断一个对象是否是空白的。空白的定义是如果一个对象是 false，empty 或空白字符，那么就是空白的。比较的特殊的是对 String 类的处理，只有零个或多个空格字符的字符串都认为是空白的。根据注释，制表符换行符等都算作空白字符，还支持 Unicode 的空白字符。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">blank?</span>       <span class="c1"># =&gt; true</span>
-</span><span class='line'><span class="s1">&#39;   &#39;</span><span class="o">.</span><span class="n">blank?</span>    <span class="c1"># =&gt; true</span>
-</span><span class='line'><span class="s2">&quot;</span><span class="se">\t\n\r</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
-</span><span class='line'><span class="s1">&#39; blah &#39;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; false</span>
-</span><span class='line'>
-</span><span class='line'><span class="c1"># Unicode whitespace is supported:</span>
-</span><span class='line'><span class="s2">&quot;\u00a0&quot;</span><span class="o">.</span><span class="n">blank?</span> <span class="c1"># =&gt; true</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>所有的数字都不是空白的，因为向 Numeric 类添加的 blank? 方法永远返回 false。</p>
-
-<h2>Object#present?</h2>
-
-<p><code>Object#present?</code>非常常用，实现非常简单，所有不是空白的对象都返回 true。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">present?</span>
-</span><span class='line'>  <span class="o">!</span><span class="n">blank?</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>ActiveSupport::HashWithIndifferentAccess</h2>
-
-<p>随着 Ruby 版本的发展，String 和 Symbol 对象的差别越来越小，在 Ruby 和 Rails 中很多时候都是可以混用的，但是有一个地方是不能混用的，那就是 Hash 的键。<code>:foo.hash != 'foo'.hash</code>，Active Support 中的 HashWithIndifferentAccess 类就是解决这个问题的。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># File activesupport/lib/active_support/hash_with_indifferent_access.rb</span>
-</span><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:HashWithIndifferentAccess</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#000000&#39;</span>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:black</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#000000&#39;</span>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;black&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#000000&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="o">=</span> <span class="s1">&#39;#FFFFFF&#39;</span>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="ss">:white</span><span class="o">]</span>  <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
-</span><span class='line'><span class="n">rgb</span><span class="o">[</span><span class="s1">&#39;white&#39;</span><span class="o">]</span> <span class="c1"># =&gt; &#39;#FFFFFF&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>好了，再也不用担心搞错了，不过这名字也太长了。Active Support还添加了<code>Hash#with_different_access</code>方法，可以通过已有的 Hash 对象转化。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">rgb</span> <span class="o">=</span> <span class="p">{</span> <span class="ss">black</span><span class="p">:</span> <span class="s1">&#39;#000000&#39;</span><span class="p">,</span> <span class="ss">white</span><span class="p">:</span> <span class="s1">&#39;#FFFFFF&#39;</span> <span class="p">}</span><span class="o">.</span><span class="n">with_indifferent_access</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>算是短一点了。</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/05/19/build-ruby-with-libreadline-6-dot-3/">使用libreadline6.3编译Ruby</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-05-19T21:22:00+08:00" pubdate data-updated="true">May 19<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Debian unstable版的软件包一般都很新，但是想尝试最新的ruby，还是不能依赖操作系统的升级。原来一直不太想用RVM、rbenv等工具，觉得系统自带的ruby足够了。现在想要尝试新版本了，就只能尝试一下了，顺便学习一下这些工具的使用。</p>
-
-<p>原来曾经尝试过rbenv，感觉还不错，又听到过一些RVM负面的信息，所以决定还是从rbenv入手。rbenv的安装很简单，按照官网的README来就好。所有的文件都安装在 <code>~/.rbenv/</code>目录中，还是比较好管理的。当时做得比较急，安装完成就准备安装ruby，但是tab了半天也没出<code>install</code>这个子命令。咋回事儿？继续看README吧，原来把编译安装ruby的功能做成了插件，需要单独安装。安装好后，终于有<code>install</code>子命令了，挑个比较新的版本，走起。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>rbenv install 2.1.1
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>当时的网速不太好，历尽千辛万苦，终于下载完了。解压、编译，然后等来的是一个编译错误。rbenv把所有的临时文件全部删除了，只留下一个日志文件。初看这个日志文件，貌似与OpenSSL相关，因为日志的最后几行确实有OpenSSL的痕迹。但仔细查看日志，发现上面几行才是出错的真正原因，在日志中有类似下面的两行：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
-</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>也就是说下面的应该是正常输出，是因为上面出错了才停止的。造成编译错误的罪魁祸首是这两行上面的日志：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>make<span class="o">[</span>2<span class="o">]</span>: Entering directory <span class="sb">`</span>/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline<span class="s1">&#39;</span>
-</span><span class='line'><span class="s1">compiling readline.c</span>
-</span><span class='line'><span class="s1">readline.c: In function ‘Init_readline’:</span>
-</span><span class='line'><span class="s1">readline.c:1886:26: error: ‘Function’ undeclared (first use in this function)</span>
-</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
-</span><span class='line'><span class="s1">                          ^</span>
-</span><span class='line'><span class="s1">readline.c:1886:26: note: each undeclared identifier is reported only once for each function it appears in</span>
-</span><span class='line'><span class="s1">readline.c:1886:36: error: expected expression before ‘)’ token</span>
-</span><span class='line'><span class="s1">     rl_pre_input_hook = (Function *)readline_pre_input_hook;</span>
-</span><span class='line'><span class="s1">                                    ^</span>
-</span><span class='line'><span class="s1">readline.c: At top level:</span>
-</span><span class='line'><span class="s1">readline.c:530:1: warning: ‘readline_pre_input_hook’ defined but not used [-Wunused-function]</span>
-</span><span class='line'><span class="s1"> readline_pre_input_hook(void)</span>
-</span><span class='line'><span class="s1"> ^</span>
-</span><span class='line'><span class="s1">make[2]: *** [readline.o] 错误 1</span>
-</span><span class='line'><span class="s1">make[2]: Leaving directory `/tmp/ruby-build.20140519215343.7209/ruby-2.0.0-p451/ext/readline&#39;</span>
-</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** <span class="o">[</span>ext/readline/all<span class="o">]</span> 错误 2
-</span><span class='line'>make<span class="o">[</span>1<span class="o">]</span>: *** 正在等待未完成的任务....
-</span><span class='line'>...
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>从上面的错误日志中可以发现，编译错误是在编译ext/readline/readline.c时，1886行的<code>Function</code>未声明造成的。上网搜索关键字<code>rbenv readline Function</code>，发现这还不是个别现象，应该算是ruby的一个BUG。问题的根本原因是ruby依赖的libreadline库从6.2升级到6.3时，将<code>Function</code>的typedef去掉了，但ruby使用libreadline的代码中还存在对<code>Function</code>的使用，因此就出现了符号未声明的编译错误。找到了问题的根源，修复的措施就简单了，使用libreadline新风格的typedef，将<code>Function</code>替换成<code>rl_hook_func_t</code>就行了。</p>
-
-<p>rbenv除了可以用<code>rbenv install</code>来自动编译安装ruby外，也可以手动编译，最后安装到<code>~/.rbenv/versions/</code>对应版本的目录中。比如2.1.1版本的ruby，在configure时添加<code>--prefix=~/.rbenv/versions/2.1.1</code>即可。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>./configure --prefix<span class="o">=</span>~/.rbenv/versions/2.1.1
-</span><span class='line'><span class="nv">$ </span>make
-</span><span class='line'><span class="nv">$ </span>make check
-</span><span class='line'><span class="nv">$ </span>make install
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在查找这一问题时，通过ruby的版本控制系统，还发现了一些比较有趣的东西。这才是本文的重点。:)
-Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有镜像版本库，提交日志是基本相同的。因为比较熟悉GitHub，下面描述的提交日志都来自GitHub。</p>
-
-<p>关于该问题的代码修改都在<a href="https://github.com/ruby/ruby/tree/trunk/ext/readline">ext/readline目录</a>中，看一下与该目录有关的<a href="https://github.com/ruby/ruby/commits/trunk/ext/readline">提交日志</a>，哇，从2014年3月1日到2014年4月4日，总共用了5次提交才比较好的修复了本问题。依次浏览这五次提交，看看到底是怎么会事儿。</p>
-
-<p>2014年3月1日，提交<a href="https://github.com/ruby/ruby/commit/ed6a2d3bf695c8781cd27b86c39c1151b57f36f4#diff-41839e3cfd5979f00c2a767307b6e0c6">ed6a2d3bf6</a>，修改了<code>ext/readline/readline.c</code>。修正方法与我上面描述的相同，就是把<code>Function</code>换成了<code>rl_hook_func_t</code>，貌似问题解决。</p>
-
-<p>2014年3月2日，前一天刚修复了BUG，怎么又有针对同一问题的提交，而且一天就提交了两次？第一次提交<a href="https://github.com/ruby/ruby/commit/2bb881148493651c577d95d55a4571c36de589b6#diff-41839e3cfd5979f00c2a767307b6e0c6">2bb8811484</a>，<code>rl_hook_func_t for old readline</code>。好吧，前一天的修改简单的改了类型名，没有考虑向前兼容老版本的readline，从提交信息看是这样的。修正方法也比较简单，就是判断一下有没有<code>rl_hook_func_t</code>这个类型，没有的话就通过宏定义将<code>rl_hook_func_t</code>替换成<code>Function</code>。第二次提交<a href="https://github.com/ruby/ruby/commit/083bf237596abd7b317bc891c5b6d766f299c62e#diff-41839e3cfd5979f00c2a767307b6e0c6">083bf23759</a>,添加了针对上一次提交的注释。难道是修改得太急，改了问题，忘了用注释解释一下？</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>+  <span class="c"># rl_hook_func_t is available since readline-4.2 (2001).</span>
-</span><span class='line'>+  <span class="c"># Function is removed at readline-6.3 (2014).</span>
-</span><span class='line'>+  <span class="c"># However, editline (NetBSD 6.1.3, 2014) doesn&#39;t have rl_hook_func_t.</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>貌似是为了兼容NetBSD的editline库，那第一次提交里提到的for old readline就不太准确了。也就是说第二次提交可能是为了补救上一次提交出现的歧义。</p>
-
-<p>但仍然没有结束。2014年3月31日，提交<a href="https://github.com/ruby/ruby/commit/664813677963792e2ad36ef9370107dc41c7f27b#diff-41839e3cfd5979f00c2a767307b6e0c6">6648136779</a>，<code>fix typo</code>，哦，是<code>$defs</code>而不是<code>$DEFS</code>，但为什么过了将近一个月才发现？</p>
-
-<p>2014年4月4日，提交<a href="https://github.com/ruby/ruby/commit/d2a8e28597df946842f44d6e0d2cbfe98863b877#diff-41839e3cfd5979f00c2a767307b6e0c6">d2a8e28597</a>，不是检查<code>rl_hook_func_t</code>而应该检查<code>rl_hook_func_t*</code>。我的疑问与上一次提交一样，为什么过了一个月才发现？</p>
-
-<p>通过对这一系列提交的追溯，我们发现是不是有些似曾相识？在修正BUG的时候不小心又引入了新的BUG，然后再修正新BUG，然后因为匆忙修正的不彻底。类似这样的问题有很多，如何才能在开发过程中尽量避免？Ruby的代码是有单元测试的，但是在不同库版本、不同操作系统的环境中单元测试的结果可能是不同的。我猜测单元测试可能只在比较主流的环境中运行，相当于跳过了这些兼容的代码，因此也就没有及时发现问题，导致一个BUG花了一个月才彻底解决。</p>
-
-<p>PS：Ruby 2.1.2已经合并了这些修改，编译2.1.2不需要再手动修改代码。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1849,6 +1780,14 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
       </li>
     
@@ -1858,14 +1797,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     
       <li class="post">
         <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a>
       </li>
     
   </ul>
