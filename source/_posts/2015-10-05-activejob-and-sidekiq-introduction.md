@@ -164,6 +164,23 @@ Sidekiq shut down gracefully.
 
 `sidekiqctl` 还有一个子命令 `quiet`，参考 [Sidekiq signals][sidekiq_signals]。
 
+## 日志
+`ActiveJob#logger` 方法是 Active Job 提供的记录日志的方法，默认与其他 Rails 日志记录在同一个文件，如果想让 Sidekiq 进程的日志记录到单独的文件，可以使用 Sidekiq 的 logger `Sidekiq::Logging.logger`。
+
+``` ruby
+class GuestsCleanupJob < ActiveJob::Base
+  queue_as :default
+
+  self.logger = Sidekiq::Logging.logger
+
+  def perform(*args)
+    logger.debug 'start guests cleanup...'
+    sleep(10)
+    logger.debug 'stop guests cleanup.'
+  end
+end
+```
+
 ## 参考
 
 [Active Job][active_job]
@@ -175,6 +192,7 @@ Sidekiq shut down gracefully.
 [Sidekiq client server][sidekiq_client_server]
 
 [Sidekiq signals][sidekiq_signals]
+
 
 [active_job]: https://github.com/rails/rails/tree/master/activejob
 [guide]: http://guides.rubyonrails.org/active_job_basics.html
