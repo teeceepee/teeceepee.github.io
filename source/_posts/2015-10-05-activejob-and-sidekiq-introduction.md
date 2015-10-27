@@ -8,7 +8,7 @@ categories: ActiveJob Sidekiq
 
 ## Active Job
 
-Rails 4.2 引入了异步任务框架 [Active Job][active_job]。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方 引入 Active Job 的目的并不是取代已有的异步任务框架，而是构建一层通用的异步任务接口，通过适配器对接不同的后端。这样，异步任务使用 Active Job 提供的接口编写，后端可以使用不同的框架执行，有点类似 ActiveRecord 与 MySQL、PostgreSQL 的关系。
+Rails 4.2 引入了异步任务框架 [Active Job][active_job]。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方引入 Active Job 的目的并不是取代已有的异步任务框架，而是构建一层通用的异步任务接口，通过适配器对接不同的后端。这样，异步任务使用 Active Job 提供的接口编写，后端可以使用不同的框架执行，有点类似 ActiveRecord 与 MySQL、PostgreSQL 的关系。
 
 下面是一个简单的例子：
 
