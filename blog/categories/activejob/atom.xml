@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ActiveJob | Why Y]]></title>
+  <link href="http://teeceepee.github.com/blog/categories/activejob/atom.xml" rel="self"/>
+  <link href="http://teeceepee.github.com/"/>
+  <updated>2016-07-24T12:36:22+08:00</updated>
+  <id>http://teeceepee.github.com/</id>
+  <author>
+    <name><![CDATA[]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Active Job 和 Sidekiq 简介]]></title>
+    <link href="http://teeceepee.github.com/blog/2015/10/05/activejob-and-sidekiq-introduction/"/>
+    <updated>2015-10-05T20:50:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2015/10/05/activejob-and-sidekiq-introduction</id>
+    <content type="html"><![CDATA[<h2>Active Job</h2>
+
+<p>Rails 4.2 引入了异步任务框架 <a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a>。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方引入 Active Job 的目的并不是取代已有的异步任务框架，而是构建一层通用的异步任务接口，通过适配器对接不同的后端。这样，异步任务使用 Active Job 提供的接口编写，后端可以使用不同的框架执行，有点类似 ActiveRecord 与 MySQL、PostgreSQL 的关系。</p>
+
+<p>下面是一个简单的例子：</p>
+
+<p>``` ruby</p>
+
+<h1>app/jobs/guests_cleanup_job.rb</h1>
+
+<p>class GuestsCleanupJob &lt; ActiveJob::Base
+  queue_as :default</p>
+
+<p>  def perform(*args)</p>
+
+<pre><code>puts 'start guests cleanup...'
+sleep(10)
+puts 'stop guests cleanup.'
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>Active Job 与 Sidekiq 集成</h2>
+
+<p>根据 Rails Guide 中 <a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job Basics</a> 的说明，如果没有设置适配器，任务会立即执行。因此，想要实现任务的异步执行，必须集成一个后端。因为我比较熟悉 Sidekiq，所以选择 Sidekiq 作为后端。</p>
+
+<p>首先在配置中指定使用的后端适配器：</p>
+
+<p>``` ruby</p>
+
+<h1>config/application.rb</h1>
+
+<p>module YourApp
+  class Application &lt; Rails::Application
+    # Be sure to have the adapter's gem in your Gemfile and follow
+    # the adapter's specific installation and deployment instructions.
+    config.active_job.queue_adapter = :sidekiq
+  end
+end
+```</p>
+
+<p>正如上面注释中写的，Active Job 只提供了设置后端适配器的选项，其余的设置都要参考 Sidekiq 本身的配置了。首先在 <code>Gemfile</code> 中加入 Sidekiq：</p>
+
+<p><code>ruby
+gem 'sidekiq'
+</code></p>
+
+<p>执行 <code>bundle</code> 后就可以用 <code>bundle exec sidekiq</code> 启动 Sidekiq 了。</p>
+
+<h2>Sidekiq 配置</h2>
+
+<h3>Web UI</h3>
+
+<p>Sidekiq 有一个 Web 界面，可以比较方便的查看任务状态。首先在 <code>Gemfile</code> 中加入 Sinatra。</p>
+
+<p>``` ruby</p>
+
+<h1>Gemfile</h1>
+
+<h1>if you require 'sinatra' you get the DSL extended to Object</h1>
+
+<p>gem 'sinatra', :require => nil
+```</p>
+
+<p>然后在 <code>config/routes.rb</code> 中挂载到一个地址，其中 <code>require 'sidekiq/web'</code> 是必需的。</p>
+
+<p>``` ruby</p>
+
+<h1>config/routes.rb</h1>
+
+<p>Rails.application.routes.draw do
+  # ...
+  require 'sidekiq/web'
+  mount Sidekiq::Web, at: '/sidekiq'
+  # ...
+end
+```</p>
+
+<p><code>bundle</code> 后重启 Rails 服务器就可以在 <code>localhost:3000/sidekiq</code> 看到 Sidekiq 的 Web 界面了。</p>
+
+<h3>Redis 设置</h3>
+
+<p>Sidekiq 依靠 Redis 实现异步功能，可以对 Redis 做一些设置。</p>
+
+<p>``` ruby</p>
+
+<h1>config/initializers/sidekiq.rb</h1>
+
+<p>url = 'redis://localhost:6379/1'
+redis_config = {
+  url: url,
+  namespace: 'sidekiq',
+}</p>
+
+<p>Sidekiq.configure_server do |config|
+  config.redis = redis_config
+end</p>
+
+<p>Sidekiq.configure_client do |config|
+  config.redis = redis_config
+end
+```</p>
+
+<p>上面的配置指定了 Sidekiq 连接 Redis 使用的 URL 以及创建 key 时的前缀。URL 除了主机名和端口号，还可以指定一个数据库号，这个是 Redis 提供的数据隔离的一种方式。比如开发环境使用 0 号数据库，而测试环境使用 1 号数据库。<code>namespace</code> 也是数据隔离的一种方式，依赖 <code>redis-namespace</code>gem 实现，通过在 key 加上相同的前缀可以方便查看哪些 key 是 Sidekiq 创建和使用的。下面是 redis-cli 的输出。</p>
+
+<p><code>
+% redis-cli
+127.0.0.1:6379&gt; SELECT 1
+OK
+127.0.0.1:6379[1]&gt; KEYS *
+1) "sidekiq:stat:processed"
+2) "sidekiq:stat:processed:2015-10-05"
+3) "sidekiq:queues"
+127.0.0.1:6379[1]&gt;
+</code></p>
+
+<p>上面的配置中出现了 <code>configure_server</code> 和 <code>configure_client</code> 两部分，是因为 Sidekiq 是 C/S 架构的。从 Redis 的角度看，向 Redis 队列中增加任务的是客户端，通常是 Puma、Unicorn 等 Rails 进程，从 Redis 队列中取任务的是服务端，一般就是 <code>bundle exec sidekiq</code> 启动的进程。</p>
+
+<h3>sidekiq.yml</h3>
+
+<p><code>sidekiq</code> 命令有许多选项可以设置，下面是 <code>bundle exec sidekiq -h</code> 的输出：</p>
+
+<p>```
+% bundle exec sidekiq -h
+2015-10-05T14:10:11.607Z 29897 TID-ovozeltdo INFO: sidekiq [options]</p>
+
+<pre><code>-c, --concurrency INT            processor threads to use
+-d, --daemon                     Daemonize process
+-e, --environment ENV            Application environment
+-g, --tag TAG                    Process tag for procline
+-i, --index INT                  unique process index on this machine
+-q, --queue QUEUE[,WEIGHT]       Queues to process with optional weights
+-r, --require [PATH|DIR]         Location of Rails application with workers or file to require
+-t, --timeout NUM                Shutdown timeout
+-v, --verbose                    Print more verbose output
+-C, --config PATH                path to YAML config file
+-L, --logfile PATH               path to writable logfile
+-P, --pidfile PATH               path to pidfile
+-V, --version                    Print version and exit
+-h, --help                       Show help
+</code></pre>
+
+<p>```</p>
+
+<p>这些选项同时也可以写到 <code>config/sidekiq.yml</code> 配置文件中，比如：</p>
+
+<p>``` yml</p>
+
+<h1>config/sidekiq.yml</h1>
+
+<hr />
+
+<p>:daemon: true
+:verbose: true
+:pidfile: ./tmp/pids/sidekiq.pid
+:logfile: ./log/sidekiq.log
+```</p>
+
+<p>上面的配置文件告诉 Sidekiq 以守护进程方式运行，输出更多日志，pid 文件和日志文件的路径。</p>
+
+<h3>结束 Sidekiq 守护进程</h3>
+
+<p>如果以守护进程方式运行，除了用 <code>ps</code> 和 <code>kill</code> 命令结束进程，还可以用 Sidekiq 提供的 <code>sidekiqctl</code> 命令。</p>
+
+<p><code>
+% sidekiqctl stop tmp/pids/sidekiq.pid
+Sidekiq shut down gracefully.
+</code></p>
+
+<p><code>sidekiqctl</code> 还有一个子命令 <code>quiet</code>，参考 <a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a>。</p>
+
+<h2>日志</h2>
+
+<p><code>ActiveJob#logger</code> 方法是 Active Job 提供的记录日志的方法，默认与其他 Rails 日志记录在同一个文件，如果想让 Sidekiq 进程的日志记录到单独的文件，可以使用 Sidekiq 的 logger <code>Sidekiq::Logging.logger</code>。</p>
+
+<p>``` ruby
+class GuestsCleanupJob &lt; ActiveJob::Base
+  queue_as :default</p>
+
+<p>  self.logger = Sidekiq::Logging.logger</p>
+
+<p>  def perform(*args)</p>
+
+<pre><code>logger.debug 'start guests cleanup...'
+sleep(10)
+logger.debug 'stop guests cleanup.'
+</code></pre>
+
+<p>  end
+end
+```</p>
+
+<h2>参考</h2>
+
+<p><a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a></p>
+
+<p><a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job guide</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq">Sidekiq</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/issues/638">Sidekiq client server</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a></p>
+]]></content>
+  </entry>
+  
+</feed>

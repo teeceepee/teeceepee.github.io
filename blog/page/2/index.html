@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="Ruby on Rails 框架的 Active Support 组件提供了很多方便使用的方法，有些方法是通过 Monkey Patch 的方式添加到 Ruby 原有的类中的。 Object#blank? 只截取了主要部分的代码。看过源码后发现，#blank? 不仅添加到 Object 类， &hellip;">
+  <meta name="description" content="Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,382 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-14T22:00:00+08:00" pubdate data-updated="true">Feb 14<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。</p>
+
+<h3>使用命令行连接其他数据库</h3>
+
+<p>可以使用 <code>-n</code> 选项指定连接的数据库号。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n &lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'><span class="nv">$ </span>redis-cli -n 2
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>2<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果已经执行 <code>redis-cli</code> 进入了 Redis 控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 1
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>1<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>在 Redis 控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
+
+<h3>使用URL连接其他数据库</h3>
+
+<p>在连接 URL 后面添加数据库号即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>redis://127.0.0.1:6379/&lt;dbnumber&gt;
+</span><span class='line'>
+</span><span class='line'>redis://127.0.0.1:6379/1
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>连接到不存在的数据库号</h3>
+
+<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是 BUG。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n 10000
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 10000
+</span><span class='line'><span class="o">(</span>error<span class="o">)</span> ERR invalid DB index
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt; <span class="nb">set </span>number 10000
+</span><span class='line'>OK
+</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/02/06/a-swift-tour-note/">A Swift Tour 笔记</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-02-06T23:06:00+08:00" pubdate data-updated="true">Feb 6<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>最近看完了 The Swift Programming Language 中的 A Swift Tour 一节，对 Swift 有了一点初步的了解，在此记录一下学习过程中遇到的一些问题。</p>
+
+<h2>可变参数列表</h2>
+
+<p>Swift 的函数可以接受多个参数，把它们收集到一个数组中。这本来应该是一个不错的语言特性，但是在写对应的 experiment 时就发现问题了，Swift 只能把多个参数收集到数组中，却不能将一个数组打散成多个参数。Ruby 中可以用 <code>sumOf(*numbers)</code> 这样的方式实现将数据打散成多个参数，Swift 目前没有这样的功能，所以无法用下面的代码实现 <code>average</code> 函数。如果实在想用 <code>sumOf</code> 函数来实现 <code>average</code>，那只能将 <code>sumOf</code> 的参数改为数组类型的。只能期待Swift能在以后实现这样的功能了，目前来说尽量少用这样的蹩脚的语言特性吧。</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>func sumOf(numbers: Int...) -&gt; Int {
+</span><span class='line'>    var sum = 0
+</span><span class='line'>    for number in numbers {
+</span><span class='line'>        sum += number
+</span><span class='line'>    }
+</span><span class='line'>    return sum
+</span><span class='line'>}
+</span><span class='line'>sumOf()
+</span><span class='line'>sumOf(42, 597, 12)
+</span><span class='line'>
+</span><span class='line'>func average(numbers: Int...) -&gt; Double {
+</span><span class='line'>    let count = numbers.count
+</span><span class='line'>    // The code below do not work!
+</span><span class='line'>    // let avg = sumOf(*numbers) / count
+</span><span class='line'>    return avg
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>枚举类型遍历</h2>
+
+<p>Swift 可以使用 <code>enum</code> 定义枚举类型，但是目前貌似没有非常方便的方法返回所有的枚举值。希望以后能添加这样的方法吧。</p>
+
+<h2>命名空间</h2>
+
+<p>Swift 有命名空间的功能，不过很少有地方提到。在解决下面与命名空间有关的一个问题时找到了 Lattner 大神的 Twitter，提到了显式使用命名空间。链接：<a href="https://twitter.com/clattner_llvm/status/474772713739792384">Chris Lattner suggests</a></p>
+
+<p>与命名空间有关的问题代码如下：</p>
+
+<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+</pre></td><td class='code'><pre><code class=''><span class='line'>extension Int {
+</span><span class='line'>
+</span><span class='line'>    func restrictToRange(#minValue: Int, maxValue: Int) -&gt; Int {
+</span><span class='line'>        var ret: Int
+</span><span class='line'>
+</span><span class='line'>        // 'Int' does not have a member named 'min'
+</span><span class='line'>        //ret  = min(max(self, minValue), maxValue)
+</span><span class='line'>
+</span><span class='line'>        // use explicit namespace
+</span><span class='line'>        ret = Swift.min(Swift.max(self, minValue), maxValue)
+</span><span class='line'>        return ret
+</span><span class='line'>    }
+</span><span class='line'>
+</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
+
+
+<p>我想用 <code>extension</code> 向 <code>Int</code> 中添加一个方法，在其中用到了 <code>min</code> 和 <code>max</code> 两个全局函数，但是直接使用会有 <code>'Int' does not have a member named 'min'</code> 这样的错误提示，在函数名前加上显式的命名空间 <code>Swift</code> 后问题解决，但是引起该错误的原因没有找到，可能与作用域和符号查找有关吧，希望在以后能找出该问题的具体原因。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx/">OSX 中挂载 NTFS 分区</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-01-26T22:29:00+08:00" pubdate data-updated="true">Jan 26<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>我的移动硬盘是在用 Mac 之前买的，格式化为 NTFS 格式，可以在 Windows 和 Linux 中正常使用。换用 Mac 后，一开始只是从移动硬盘中读文件，没发觉有什么问题，一度以为网上说的 OSX 不支持 NTFS 的说法是针对老版本。直到又一次想要向移动硬盘中存文件，发现连新建目录都不行，这才了解到 OSX 默认把 NTFS 分区挂载为只读。</p>
+
+<p>原来 OSX 从 Snow Leopard 开始就内置了对 NTFS 分区的读写支持，但是默认将 NTFS 分区挂载为只读分区，具体原因不详。既然是内置读写支持，那就有办法将 NTFS 分区挂载为可读可写的分区。</p>
+
+<p>实现这个功能的命令是 <code>/sbin/mount_ntfs</code>，系统在实现移动硬盘自动挂载功能时也是间接使用该命令，所以网上有修改该文件来实现自动挂载为可读可写分区的方法。个人觉得修改系统原文件不是一个很好的方法，没有采用。不过也学到了使用该命令的方法。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>mount_ntfs -o rw,nobrowse DEVICE MOUNT_POINT
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>其中 <code>DEVICE</code> 是硬盘分区对应的设备文件， 比如 <code>/dev/disk2s1</code>，<code>MOUNT_POINT</code> 是挂载点，比如 <code>/Volumes/data</code>。通过 <code>-o rw,nobrowse</code> 这样的参数，可以将 NTFS 分区挂载为可读可写分区，其中的 <code>rw</code> 顾名思义，<code>nobrowse</code> 表示不在桌面和 Finder 中显示。不在桌面和 Finder 中显示很不方便，于是尝试只是用 <code>-o rw</code> 这样的参数，挂载的分区出现在了桌面和 Finder中，但是依然是只读分区，尝试失败。可能是系统做了限制，挂载为可读可写分区时不允许在桌面和 Finder 中显示。目前我的做法是将 <code>/Volumes</code> 目录放到 Finder 的个人收藏中，然后手动挂载分区到这个目录下的某个子目录。</p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2014/12/06/install-emacs-on-osx/">Install Emacs on OSX</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2014-12-06T16:24:00+08:00" pubdate data-updated="true">Dec 6<span>th</span>, 2014</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>原来在 Linux 和 Windows 系统都是用 Emacs，换了 MacBook Pro 后就考虑如何在 OSX 上安装 Emacs。其实 OSX 默认就安装了 Emacs，只不过版本太老，还是22的，而且貌似没有图形界面，所以还是需要安装新版本的有图形界面的Emacs。OSX 上貌似有好几种 Emacs，因为我使用 Homebrew 管理软件包，所以选择了用 Homebrew 安装 Emacs。在这里记录一下安装配置时遇到的问题。</p>
+
+<h2>使用 Homebrew 安装 Emacs</h2>
+
+<p>Homebrew 有 Emacs 的 formula，那就像其他软件一样安装吧。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'> <span class="c"># Do not use this command, it does not work well!</span>
+</span><span class='line'>brew install emacs
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>通过命令行的输出可以看到 Homebrew 默认选择 bottle 的方式安装 Emacs，bottle 方式就是直接下载已经编译好的软件包。一会儿安装完成，赶紧在命令行输入 <code>emacs --version</code>，确认是版本是新的，以为大功告成了。但是找了半天没找到怎么启动图形界面的 Emacs，遂上网查找问题。查找的结果是用上面的命令安装的 Emacs 只能在终端使用，根本就没有图形界面。想用图形界面，只能用编译的方式安装 Emacs。命令如下：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># brew install emacs --cocoa</span>
+</span><span class='line'><span class="c"># 24.5 版本使用下面的命令</span>
+</span><span class='line'>brew install emacs --with-cocoa
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这样就会编译 Cocoa 版本的 Emacs，也就是有图形界面的。在写这篇文章时，Homebrew 中的 Emacs 版本为 24.4，安装这个版本不需要再加 <code>--srgb</code> 选项，貌似已经是默认行为，不需要写在命令中了。网上查到的资料大多都有 <code>--srgb</code> 选项，是24.4版本之前需要的选项，现在已经不需要了。</p>
+
+<p>安装完后仍然是不能直接启动图形界面的，需要做一个符号链接。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>ln -s /usr/local/Cellar/emacs/24.4/Emacs.app /Applications/Emacs.app
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>需要注意链接的路径，如果修改了 Homebrew 的安装路径，需要修改成对应的。到此，终于大功告成了。</p>
+
+<h2>修改 Emacs 修饰键</h2>
+
+<p>MacBook Pro 的键盘有一点让我非常不习惯，Control 键竟然只有一个！Command、Option、Shift 键都有两个，Control 键竟然只在左边有，右边的位置被方向键霸占了。OSX 的快捷键大多以 Command 开头，影响不大，但是 Emacs 可是大量使用 Control 键啊。原来的解决方案是使用外接键盘，现在不用外接键盘了，只能考虑其他方式了。用 Command 代替 Control 的功能是个不错的方法，经过上网查找，找到了几个 Emacs 的变量，可以实现该功能，只需添加下面的代码到配置文件即可。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='cl'><span class='line'><span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">eq</span> <span class="nv">system-type</span> <span class="ss">&#39;darwin</span><span class="p">)</span>
+</span><span class='line'>    <span class="p">(</span><span class="k">progn</span>
+</span><span class='line'>      <span class="c1">;(setq mac-control-modifier &#39;super)</span>
+</span><span class='line'>      <span class="p">(</span><span class="k">setq</span> <span class="nv">mac-command-modifier</span> <span class="ss">&#39;control</span><span class="p">)))</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>system-type</code> 变量表示当前系统类型，<code>darwin</code> 表示 OSX，<code>mac-command-modifier</code> 变量表示按下 Command 键输入哪个前缀。注释掉的那一行表示，用 Control 键实现原来 Command 键的功能，因为发生过误操作，所以注释不用了。</p>
+
+<h2>总结</h2>
+
+<p>这篇文章介绍了如何用 Homebrew 安装有图形界面的 Emacs，安装版本为24.4。原来安装过24.3版本的，有一个非常严重的BUG，一旦触发用 x-popup-dialog 打开的对话框，整个 Emacs 就没有响应了，只能通过系统的强制退出功能关掉程序。这其中就包括 <code>cmd + p</code> 这样的组合键，有时想按 <code>ctrl +p</code>，结果按成了 <code>cmd + p</code>，弹出和打印有关的对话框，然后整个 Emacs 就没有响应了，这也是更改 Command 键的功能的部分原因。现在重新安装了24.4，BUG没有了，使用起来更顺畅了。</p>
+
+<h2>更新 2015-10-06</h2>
+
+<p>Homebrew 里的 Emacs 更新到了 24.5，编译的选项发生了变化，可以使用 <code>brew info emacs</code> 查看。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew install emacs --with-cocoa
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>符号链接也可以用下面的命令实现，会链接到 <code>/Applications/</code> 目录。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew linkapps emacs
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考</h2>
+
+<p><a href="http://emacsredux.com/blog/2014/01/11/a-peek-at-emacs-24-dot-4-srgb-colours-on-os-x/">http://emacsredux.com/blog/2014/01/11/a-peek-at-emacs-24-dot-4-srgb-colours-on-os-x/</a></p>
+
+<p><a href="http://stackoverflow.com/questions/1817257/how-to-determine-operating-system-in-elisp">http://stackoverflow.com/questions/1817257/how-to-determine-operating-system-in-elisp</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -839,81 +1215,9 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2013/06/03/ruby-stringscanner/">Ruby StringScanner</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2013-06-03T20:09:00+08:00" pubdate data-updated="true">Jun 3<span>rd</span>, 2013</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>想写一个简单的解释器，源代码用字符串表示。本来想自己写一个 scanner，后来发现 Ruby 库中有一个 StringScanner 类，但不是用 Ruby 写的，不能做源码浏览了。在这里记录一下 StringScanner 的用法。</p>
-
-<h1>&lt;b> strscan &lt;/b></h1>
-
-<p>要用 StringScanner 类需要 <code>require 'strscan'</code> ，以前老是忘了这个，这次一定要记住。</p>
-
-<p>按照 StringScanner <a href="http://ruby-doc.org/stdlib-1.9.3/libdoc/strscan/rdoc/StringScanner.html">官方文档</a>的说法，它的用处是对字符串进行词法扫描操作。我用的最多的是 <code>scan</code> 方法，它与 <code>String#scan</code> 最大的不同是内部维护一个 position 变量，使得每次扫描都从position开始而不是开头。</p>
-
-<h1>常用方法</h1>
-
-<p><code>StringScanner.new</code> 构造一个 StringScanner 对象，参数是待扫描的字符串。</p>
-
-<figure class='code'><figcaption><span>StringScanner.new</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span> <span class="s1">&#39;(+ a 2)&#39;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>StringScanner#eos?</code> 判断是否扫描完毕。</p>
-
-<p><code>StringScanner#scan</code> 参数 pattern 为一个正则表达式，尝试从当前位置与 pattern 匹配，如果成功那么 scanner 前进到下一个待扫描位置并返回匹配的字符串，前进的数目与匹配字符串的长度相等。匹配失败的话返回 <code>nil</code>。</p>
-
-<figure class='code'><figcaption><span>StringScanner#scan</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">s</span> <span class="o">=</span> <span class="no">StringScanner</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s1">&#39;test string&#39;</span><span class="p">)</span>
-</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot;test&quot;</span>
-</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; nil</span>
-</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\s+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot; &quot;</span>
-</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/\w+/</span><span class="p">)</span>   <span class="c1"># -&gt; &quot;string&quot;</span>
-</span><span class='line'><span class="nb">p</span> <span class="n">s</span><span class="o">.</span><span class="n">scan</span><span class="p">(</span><span class="sr">/./</span><span class="p">)</span>     <span class="c1"># -&gt; nil</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>StringScanner#peek</code> 接受一个数字类型的参数 len，返回 <code>string[pos, len]</code>，也就是即将被扫描的字符串，不推进扫描指针。</p>
-
-<p><code>StringScanner#check</code> 与 <code>scan</code> 类似，但是不推进扫描指针。</p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
+    
+      <a class="prev" href="/blog/page/3/">&larr; Older</a>
     
     <a href="/blog/archives">Blog Archives</a>
     
@@ -928,23 +1232,23 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/02/letsencrypt/">尝试 Let&#8217;s Encrypt</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
       </li>
     
   </ul>
@@ -957,7 +1261,7 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 -  -
+  Copyright &copy; 2016 -  -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

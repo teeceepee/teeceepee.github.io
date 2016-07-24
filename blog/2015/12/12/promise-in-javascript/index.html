@@ -1,0 +1,385 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Promise in JavaScript - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="Promise JavaScript 的并发编程模型是依赖回调函数的异步事件驱动模型。这种模型通过只使用单线程避免了多线程模型的诸多弊端，同时还可以充分利用单核 CPU，达到不错的性能表现。但是如果业务逻辑比较复杂，大量的异步回调函数会使代码非常难读难调试。Promise 是对回调函数的进一步抽象 &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/12/12/promise-in-javascript">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+<!--
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+-->
+  <script src="/javascripts/libs/jquery.min.js" type="text/javascript"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-67854007-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Promise in JavaScript</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-12-12T19:59:00+08:00" pubdate data-updated="true">Dec 12<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Promise</h2>
+
+<p>JavaScript 的并发编程模型是依赖回调函数的异步事件驱动模型。这种模型通过只使用单线程避免了多线程模型的诸多弊端，同时还可以充分利用单核 CPU，达到不错的性能表现。但是如果业务逻辑比较复杂，大量的异步回调函数会使代码非常难读难调试。Promise 是对回调函数的进一步抽象，力图在保留原有优势的情况下解决回调函数带来的问题。</p>
+
+<h2>Promise in jQuery</h2>
+
+<p>jQuery 可能是使用最多的 JavaScript 库，jQuery 的 Ajax 部分显然是异步的、依赖回调函数的，自然也就有上面说的各种问题。jQuery 从 1.5 版本开始引入了 Deferred 对象，Deferred 对象和相关的 Promise 对象是 jQuery 对 Promise 的实现。Deferred 包含两类方法，一类是修改内部状态的，一类是注册回调函数的，Promise 隐藏了 Deffered 的修改内部状态的方法，只保留了注册回调函数的接口。jQuery 1.5 的 Ajax 全部使用 Deferred 对象重写了，所以很多人可能已经通过 Ajax 操作使用过 Deferred 对象了。下面的例子是 Ajax 的两种写法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// callback</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Promise object</span>
+</span><span class='line'><span class="nx">xhr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// chainable Promise object</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">}).</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">}).</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>jQuery.ajax</code> 的返回值是一个 Promise 对象，<code>done</code> 和 <code>fail</code> 都是 Promise 对象的方法，而且返回值还是 Promise 对象自身。两种写法看上去好像差不多，<code>done</code> 对应 <code>success</code>，<code>fail</code> 对应 <code>error</code>。但是 Promise 对象的写法可以把把回调单独拿出来写，同时又因为可以使用链式写法，可读性上貌似好了一些。但是使用 Promise 的写法还有其他好处。</p>
+
+<p>首先，Promise 对象的 <code>done</code> 和 <code>fail</code> 方法可以调用多次，也就是可以自由关联多个回调函数，传统写法如果想关联多个回调，只能把多个函数用一个函数包裹后才可以。</p>
+
+<p>其次，我认为是最重要的，Promise 对象可以解耦事件注册和事件触发的顺序。在传统的 JavaScript 事件编程中，事件注册一定要在事件触发之前，否则可能会漏掉事件。看下面的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// correct</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">httpRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;/foo/bar&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// wrong!</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">httpRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;/foo/bar&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>第二段代码是错误的，在 <code>send</code> 之后再使用 <code>onreadystatechange</code> 注册回调函数有可能会漏掉一些事件。jQuery 的 <code>ajax</code> 函数通过把回调限制为参数的一部分来避免这个问题。</p>
+
+<p>Promise 则不一定需要保证这样的顺序，因为 Promise 对象内部保存了事件的状态，所以即使注册回调函数发生在事件触发之后，注册的回调函数仍然可以执行。下面的例子演示了这个过程。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">slow_func</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">slow_func</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// xhr completed here!</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">slow_func</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// still executed!</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>TBC Promise in ES2015</h2>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-12-12T19:59:00+08:00" pubdate data-updated="true">Dec 12<span>th</span>, 2015</time>
+      
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/10/05/activejob-and-sidekiq-introduction/" title="Previous Post: Active Job 和 Sidekiq 简介">&laquo; Active Job 和 Sidekiq 简介</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2016/04/02/letsencrypt/" title="Next Post: 尝试 Let's Encrypt">尝试 Let's Encrypt &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/02/letsencrypt/">尝试 Let's Encrypt</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

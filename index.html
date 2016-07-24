@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="MiniMagick 是 Ruby 中常用的图片处理库，它是基于 ImageMagick 这个跨平台图片处理库实现的。比较特别的是，MiniMagick 是通过调用 ImageMagick 提供的一系列命令来实现图片处理功能的，也就是只要操作系统中有对应的 ImageMagick 命令，比如 &hellip;">
+  <meta name="description" content="前几天发现自己写的 Rails 项目数据库里的时间不对，与实际时间相差了八个小时。作为一个生活在东八区的人，很容易理解这是一个与时区相关的问题。 首先检查 Rails 的配置，发现没有与时区相关的配置，说明这是 Rails 的默认行为。查了一些资料后，慢慢理解了 Rails 是如何处理时区的。 &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,984 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/07/10/rails-time-zone/">Rails Time Zone</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-07-10T14:22:00+08:00" pubdate data-updated="true">Jul 10<span>th</span>, 2016</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>前几天发现自己写的 Rails 项目数据库里的时间不对，与实际时间相差了八个小时。作为一个生活在东八区的人，很容易理解这是一个与时区相关的问题。</p>
+
+<p>首先检查 Rails 的配置，发现没有与时区相关的配置，说明这是 Rails 的默认行为。查了一些资料后，慢慢理解了 Rails 是如何处理时区的。</p>
+
+<p>首先是如何向数据库中插入时间。通过数据库迁移生成的时间和日期类型的字段是没有时区信息的。<code>created_at</code> 在 PostgreSQL 中是 <code>timestamp without time zone</code> 类型的，在 MySQL 中是 <code>datetime</code> 类型的，显然都是不带时区信息的。Rails 默认在数据库中保存 UTC 时间，也可以通过修改配置让数据库中保存的是本地时间。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/application.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># default, store utc time</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">active_record</span><span class="o">.</span><span class="n">default_timezone</span> <span class="o">=</span> <span class="ss">:utc</span>
+</span><span class='line'><span class="c1"># store local time</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">active_record</span><span class="o">.</span><span class="n">default_timezone</span> <span class="o">=</span> <span class="ss">:local</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>到这里就明白为什么数据库里的时间与实际时间相差了八个小时了。所谓的“实际时间”就是本地时间，北京时间，东八区时间，对应的 UTC 时间就是减掉 8 个小时的时间。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Rails console</span>
+</span><span class='line'><span class="o">[</span><span class="mi">5</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'><span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">3</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">WHERE</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="o">=</span> <span class="vg">$1</span> <span class="no">LIMIT</span> <span class="vg">$2</span>  <span class="o">[[</span><span class="s2">&quot;id&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]</span><span class="p">,</span> <span class="o">[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># PostgreSQL console</span>
+</span><span class='line'><span class="n">pg_development</span><span class="o">&gt;</span> <span class="nb">select</span> <span class="n">created_at</span> <span class="n">from</span> <span class="n">bars</span> <span class="n">where</span> <span class="nb">id</span> <span class="o">=</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'><span class="o">+----------------------------+</span>
+</span><span class='line'><span class="o">|</span> <span class="n">created_at</span>                 <span class="o">|</span>
+</span><span class='line'><span class="o">|----------------------------|</span>
+</span><span class='line'><span class="o">|</span> <span class="mi">2016</span><span class="o">-</span><span class="mo">06</span><span class="o">-</span><span class="mi">29</span> <span class="mi">15</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span><span class="o">.</span><span class="mi">769707</span> <span class="o">|</span>
+</span><span class='line'><span class="o">+----------------------------+</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到 Rails 自动对数据库里时间做了处理，返回的时间是带有时区信息的。</p>
+
+<p>Rails 可以从哪些地方获取到时区的信息呢？有两种方式。</p>
+
+<h3>操作系统</h3>
+
+<p>第一种是直接从操作系统获取。操作系统都是有时区配置的，Ruby 的 <code>Time</code> 和 <code>DateTime</code> 类可以获取到操作系统的时区。下面几行命令的输出可以看到时区的影响。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% ll </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span>
+</span><span class='line'><span class="n">lrwxr</span><span class="o">-</span><span class="n">xr</span><span class="o">-</span><span class="n">x</span>  <span class="mi">1</span> <span class="n">root</span>  <span class="n">wheel</span>    <span class="mi">33</span><span class="n">B</span>  <span class="mi">7</span>  <span class="mi">9</span> <span class="mi">18</span><span class="p">:</span><span class="mi">08</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span> <span class="o">-&gt;</span> <span class="sr">/usr/s</span><span class="n">hare</span><span class="o">/</span><span class="n">zoneinfo</span><span class="o">/</span><span class="no">Asia</span><span class="o">/</span><span class="no">Shanghai</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="mi">90</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="mi">2016</span><span class="o">-</span><span class="mo">07</span><span class="o">-</span><span class="mi">10</span> <span class="mi">15</span><span class="p">:</span><span class="mi">12</span><span class="p">:</span><span class="mi">52</span> <span class="o">+</span><span class="mi">0800</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% ll </span><span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span>
+</span><span class='line'><span class="n">lrwxr</span><span class="o">-</span><span class="n">xr</span><span class="o">-</span><span class="n">x</span>  <span class="mi">1</span> <span class="n">root</span>  <span class="n">wheel</span>    <span class="mi">30</span><span class="n">B</span>  <span class="mi">7</span> <span class="mi">10</span> <span class="mi">16</span><span class="p">:</span><span class="mi">13</span> <span class="o">/</span><span class="n">etc</span><span class="o">/</span><span class="n">localtime</span> <span class="o">-&gt;</span> <span class="sr">/usr/s</span><span class="n">hare</span><span class="o">/</span><span class="n">zoneinfo</span><span class="o">/</span><span class="no">Asia</span><span class="o">/</span><span class="no">Tokyo</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="mi">93</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">now</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="mi">2016</span><span class="o">-</span><span class="mo">07</span><span class="o">-</span><span class="mi">10</span> <span class="mi">16</span><span class="p">:</span><span class="mi">13</span><span class="p">:</span><span class="mi">57</span> <span class="o">+</span><span class="mi">0900</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>当 OS X 的时区从东八区改为东九区时，<code>Time.now</code> 返回的时间也相依的发生变化。其实这种获取时区的方式与 Rails 无关，更准确的说这是 Ruby 获取时区的方式。</p>
+
+<h3>Rails</h3>
+
+<p>第二种方式是在是通过配置文件设置 Rails 应用的时区。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/application.rb</span>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">time_zone</span> <span class="o">=</span> <span class="s1">&#39;UTC&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">time_zone</span> <span class="o">=</span> <span class="s1">&#39;Beijing&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">config</span><span class="o">.</span><span class="n">time_zone</span> <span class="o">=</span> <span class="s1">&#39;Tokyo&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>config.time_zone</code> 设置 Rails 默认使用的时区，默认值是 &#8216;UTC&#8217;，它会影响到 Rails 里时间的显示，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config.time_zone = &#39;UTC&#39;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">11</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">1</span><span class="o">.</span><span class="mi">2</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">15</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">UTC</span> <span class="o">+</span><span class="mo">00</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># config.time_zone = &#39;Beijing&#39;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到，相同的时间，因为默认时区的不同，显示是不同的。如果我们把 UTC 时间当做绝对时间，设置时区只是让 Rails 把绝对时间显示为对应时区的时间。除了默认的时区设置，还有其他设置时区的方式。</p>
+
+<h4>Time#zone=</h4>
+
+<p>Rails 扩展了 <code>Time</code> 类，增加了 <code>zone=</code> 等方法，<code>config.time_zone = 'Beijing'</code> 实际上就等价于 <code>Time.zone = 'Beijing'</code>，只不过使用 <code>Time#zone=</code> 可以重设默认时区。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config.time_zone = &#39;Beijing&#39;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">4</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">zone</span> <span class="o">=</span> <span class="s1">&#39;Beijing&#39;</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="s2">&quot;Beijing&quot;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">3</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">4</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="mi">4</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">zone</span> <span class="o">=</span> <span class="s1">&#39;Singapore&#39;</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="s2">&quot;Singapore&quot;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">5</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">3</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">SGT</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">[</span><span class="mi">6</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Time</span><span class="o">.</span><span class="n">zone</span> <span class="o">=</span> <span class="s1">&#39;Tokyo&#39;</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="s2">&quot;Tokyo&quot;</span>
+</span><span class='line'><span class="o">[</span><span class="mi">7</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">3</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Thu</span><span class="p">,</span> <span class="mi">30</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mo">00</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">JST</span> <span class="o">+</span><span class="mi">09</span><span class="p">:</span><span class="mo">00</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h4>ActiveSupport::TimeWithZone#in_time_zone</h4>
+
+<p><code>Time#zone=</code> 修改时区后会影响到所有时间的显示，<code>in_time_zone</code> 只针对一个对象，不会影响其他的时间对象。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="o">[</span><span class="mi">1</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="no">Bar</span><span class="o">.</span><span class="n">first</span><span class="o">.</span><span class="n">created_at</span>
+</span><span class='line'>  <span class="no">Bar</span> <span class="no">Load</span> <span class="p">(</span><span class="mi">0</span><span class="o">.</span><span class="mi">5</span><span class="n">ms</span><span class="p">)</span>  <span class="no">SELECT</span>  <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="n">*</span> <span class="no">FROM</span> <span class="s2">&quot;bars&quot;</span> <span class="no">ORDER</span> <span class="no">BY</span> <span class="s2">&quot;bars&quot;</span><span class="o">.</span><span class="s2">&quot;id&quot;</span> <span class="no">ASC</span> <span class="no">LIMIT</span> <span class="vg">$1</span>  <span class="o">[[</span><span class="s2">&quot;LIMIT&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="o">]]</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'><span class="o">[</span><span class="mi">2</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">.</span><span class="n">in_time_zone</span><span class="p">(</span><span class="s1">&#39;UTC&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">15</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">UTC</span> <span class="o">+</span><span class="mo">00</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'><span class="o">[</span><span class="mi">3</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">.</span><span class="n">in_time_zone</span><span class="p">(</span><span class="s1">&#39;Singapore&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">SGT</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'><span class="o">[</span><span class="mi">4</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">t</span><span class="o">.</span><span class="n">in_time_zone</span><span class="p">(</span><span class="s1">&#39;Tokyo&#39;</span><span class="p">)</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Thu</span><span class="p">,</span> <span class="mi">30</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mo">00</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">JST</span> <span class="o">+</span><span class="mi">09</span><span class="p">:</span><span class="mo">00</span>
+</span><span class='line'><span class="o">[</span><span class="mi">5</span><span class="o">]</span> <span class="n">pry</span><span class="p">(</span><span class="n">main</span><span class="p">)</span><span class="o">&gt;</span> <span class="n">t</span>
+</span><span class='line'><span class="o">=&gt;</span> <span class="no">Wed</span><span class="p">,</span> <span class="mi">29</span> <span class="no">Jun</span> <span class="mi">2016</span> <span class="mi">23</span><span class="p">:</span><span class="mi">15</span><span class="p">:</span><span class="mi">25</span> <span class="no">CST</span> <span class="o">+</span><span class="mi">08</span><span class="p">:</span><span class="mo">00</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>时区的影响</h2>
+
+<p>目前看来，不管如何设置时区，貌似只会影响时间的显示，毕竟修改时区不会改变绝对时间，但某些场景中时区就显得举足轻重了。比如“每天零点重新计算用户活跃度”，“每周一上午八点发送推荐邮件”，我们发现如果不指明时区，“零点”和“上午八点”这样的时间是无意义的。在类似的场景中，时区是必须提供的一个信息。在一些国际化产品中，用户来自全世界各地，在查看报表等信息时，用户当然希望显示的是自己所在时区的时间。一种解决方式是在用户表中增加一个字段来保存用户的时区，然后用 <code>in_time_zone</code> 或下面的 <code>around_action</code> 将时间显示为用户所在时区的本地时间。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># http://api.rubyonrails.org/classes/Time.html#method-c-zone-3D</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">ApplicationController</span> <span class="o">&lt;</span> <span class="ss">ActionController</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">around_filter</span> <span class="ss">:set_time_zone</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">set_time_zone</span>
+</span><span class='line'>    <span class="k">if</span> <span class="n">logged_in?</span>
+</span><span class='line'>      <span class="no">Time</span><span class="o">.</span><span class="n">use_zone</span><span class="p">(</span><span class="n">current_user</span><span class="o">.</span><span class="n">time_zone</span><span class="p">)</span> <span class="p">{</span> <span class="k">yield</span> <span class="p">}</span>
+</span><span class='line'>    <span class="k">else</span>
+</span><span class='line'>      <span class="k">yield</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考</h2>
+
+<p><a href="http://danilenko.org/2012/7/6/rails_timezones/">The Exhaustive Guide to Rails Time Zones</a></p>
+
+<p><a href="https://robots.thoughtbot.com/its-about-time-zones">It&#8217;s About Time (Zones)</a></p>
+
+<p><a href="http://stackoverflow.com/questions/6118779/how-to-change-default-timezone-for-active-record-in-rails">http://stackoverflow.com/questions/6118779/how-to-change-default-timezone-for-active-record-in-rails</a></p>
+
+<p><a href="http://api.rubyonrails.org/classes/Time.html#method-c-zone-3D">http://api.rubyonrails.org/classes/Time.html#method-c-zone-3D</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/04/02/letsencrypt/">尝试 Let&#8217;s Encrypt</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-04-02T20:22:00+08:00" pubdate data-updated="true">Apr 2<span>nd</span>, 2016</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>在计算机网络的远古时期，HTTP 的设计者一开始并没有在安全方面做太多的考虑，他们把 HTTP 设计为一个明文传输的文本协议，简单、直观。HTTP 出现后互联网经历了爆炸性的成长，HTTP 成为了使用最广泛的一种应用层网络协议，这与它简单直观的特点不无关系。然而，在互联网高速发展了几十年后，支撑 HTTP 广泛应用的几个特性却正在慢慢制约互联网的继续发展。其中一个特性，明文传输，越来越不适合存在于当今的互联网环境。明文传输，意味着在数据链路上的任何人都有可能会窥探和篡改数据，在数据往返的途中，路由器、公共 WiFi、电信运营商、GFW 等都有可能造成潜在的危害。当前人们对互联网安全性的要求越来越高，使用加密的传输协议势在必行。</p>
+
+<p>好在有 HTTPS，它在 HTTP 的基础上增加了一层加密的协议，应用层的代码几乎不需要任何修改，只要部署好相关的设施就能无缝迁移到安全的 HTTPS 协议了。但是部署 HTTPS 需要向证书认证机构申请证书，这对个人来说是一件非常繁琐的事情，而且证书通常需要购买，更增加了个人网站使用 HTTPS 的难度。</p>
+
+<p>然而在 2015 年，情况发生了变化，一家新的证书机构 <a href="https://letsencrypt.org/">Let&#8217;s Encrypt</a> 开始提供免费、自动化的证书服务。它的官网是这么描述自己的：</p>
+
+<blockquote><p>Let’s Encrypt is a new Certificate Authority:</p>
+
+<p>It’s free, automated, and open.</p></blockquote>
+
+<p>免费，Let&#8217;s Encrypt 提供的证书是完全免费的，完全不需要任何支付费用。自动化的，使用它提供的工具几部操作就可以完成证书的获取，更进一步，还可以把证书的获取、更新、部署通过程序完全自动化。开放的，整个服务开发与更新都是开放的。当然，Let&#8217;s Encrypt 提供的证书是安全的。</p>
+
+<h2>获取证书</h2>
+
+<p>在刚了解 Let&#8217;s Encrypt 时，我以为需要到官网注册账号，之后才能获取到证书。后来发现完全不需要，只要证明证书绑定的域名属于你自己就可以了，非常简便。</p>
+
+<p>Let&#8217;s Encrypt 提供了工具来实现证书的获取和更新，可以通过 Git 下载：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>git clone https://github.com/letsencrypt/letsencrypt
+</span><span class='line'><span class="nv">$ </span><span class="nb">cd </span>letsencrypt
+</span><span class='line'><span class="nv">$ </span>./letsencrypt-auto --help
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>运行 <code>letsencrypt-auto</code> 会自动安装依赖包并且把自身升级到最新版，所以第一次执行上面最后一条命令会有一点慢。执行过命令后会创建 <code>/etc/letsencrypt/</code> 目录，证书以及其他的数据都会保存在这个目录，因此执行命令需要有 root 权限。</p>
+
+<p>当 <code>letsencrypt-auto</code> 把依赖安装和升级都做完后就可以使用了。<code>letsencrypt-auto</code> 提供了好几种方式来获取证书，下面是 <code>letsencrypt-auto --help</code> 输出的一部分，描述了提供的几个子命令。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>  <span class="o">(</span>default<span class="o">)</span> run        Obtain &amp; install a cert in your current webserver
+</span><span class='line'>  certonly             Obtain cert, but <span class="k">do </span>not install it <span class="o">(</span>aka <span class="s2">&quot;auth&quot;</span><span class="o">)</span>
+</span><span class='line'>  install              Install a previously obtained cert in a server
+</span><span class='line'>  renew                Renew previously obtained certs that are near expiry
+</span><span class='line'>  revoke               Revoke a previously obtained certificate
+</span><span class='line'>  rollback             Rollback server configuration changes made during install
+</span><span class='line'>  config_changes       Show changes made to server config during installation
+</span><span class='line'>  plugins              Display information about installed plugins
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>certonly</code> 子命令只用来获取证书，证书的安装，也就是在 Web Server 里的配置需要手动完成。<code>renew</code> 更新已经获取到的证书，获取到的证书只有 90 天有效期，通过这个命令可以将证书的剩余有效期更新为 90 天。</p>
+
+<p><code>letsencrypt-auto</code> 使用插件机制实现证书的获取和安装，下面介绍自带的三种插件。</p>
+
+<h3>Apache</h3>
+
+<p><code>letsencrypt-auto</code> 提供了针对 Apache 的自动获取和安装插件，只要一条命令 <code>letsencrypt-auto --apache</code> 就完成获取和安装，但是我使用的并不是 Apache，因此无法验证这种方法。</p>
+
+<h3>Webroot</h3>
+
+<p><code>letsencrypt-auto</code> 提供的第二种获取证书的插件叫 Webroot。这种方式需要配置服务器上已运行的 Web Server 来实现。比如 Nginx，需要在配置文件里添加下面的配置，使得 <code>/.well-known/*</code> 这样的路径可以被访问到。修改好配置文件后不要忘记 <code>restart</code> 或 <code>reload</code> Nginx。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>    location ~ /.well-known <span class="o">{</span>
+</span><span class='line'>            allow all;
+</span><span class='line'>    <span class="o">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>第二步，需要搞清楚 Web Server 提供静态文件的根路径。基本是对应 Nginx <code>root</code> 指令指定的位置，比如 <code>/usr/share/nginx/html</code> 或 <code>/var/www/</code>，需要根据具体的配置文件来确定，我们假设这个路径叫 <code>$WEBROOT_PATH</code>，同时假设证书绑定的域名叫 <code>$DOMAIN</code> 和 <code>$WWW_DOMAIN</code>。</p>
+
+<p>然后执行下面的命令就可以获取到证书了。证书以及其他数据存储在 <code>/etc/letsencrypt/</code> 目录。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>./letsencrypt-auto certonly --webroot --webroot-path <span class="nv">$WEBROOT_PATH</span> -d <span class="nv">$DOMAIN</span> -d <span class="nv">$WWW_DOMAIN</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>Webroot 插件的原理是配置已有的 Web Server，使 <code>/.well-known/*</code> 这样的路径可以从外部访问，同时在 Web Server 的根路径放一个 <code>.well-known/xxx...</code> 文件。这个文件是在执行上面的命令时生成的，然后把访问路径告诉 Let&#8217;s Encrypt 的服务器，Let&#8217;s Encrypt 服务器访问后就可以验证待绑定域名的有效性。所以在执行完上面的命令后，Web Server 的日志里应该会有几条类似这样的访问记录。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="s2">&quot;GET /.well-known/acme-challenge/kiEt5Rn8rAQqZBQ9-ve6-xxxxxx HTTP/1.1&quot;</span> <span class="s2">&quot;Mozilla/5.0 (compatible; Let&#39;s Encrypt validation server; +https://www.letsencrypt.org)&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h3>Standalone</h3>
+
+<p>Webroot 需要配置已有的 Web Server，步骤稍显繁琐，standalone 插件可以把这些事情自动化，但前提是如果已有 Web Server 在监听 80 端口，需要暂时停掉，否则 standalone 插件不能启动自带的服务器程序。获取到的证书同样存储在 <code>/etc/letsencrypt/</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>./letsencrypt-auto certonly --standalone -d <span class="nv">$DOMAIN</span> -d <span class="nv">$WWW_DOMAIN</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>使用证书配置 HTTPS</h2>
+
+<p>配置 HTTPS 已经与 Let&#8217;s Encrypt 没有关系了。比如 Nginx 可以使用下面的片段配置 HTTPS，其中的域名需要修改成自己的。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>    listen 443 ssl;
+</span><span class='line'>
+</span><span class='line'>    server_name example.com www.example.com;
+</span><span class='line'>
+</span><span class='line'>    ssl_certificate /etc/letsencrypt/live/example.com/fullchain.pem;
+</span><span class='line'>    ssl_certificate_key /etc/letsencrypt/live/example.com/privkey.pem;
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>续签证书</h2>
+
+<p>上面提到过，获取到的证书有效期只有 90 天，因此需要在过期之前续签，将证书有效期重新设置为 90 天。使用 renew 子命令实现续签。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>./letsencrypt-auto renew
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>如果想要实现自动续签，只要在一定时间间隔内重新执行上面的命令就可以了。网上的大部分教程使用 Linux 的 Cron 实现自动续签。</p>
+
+<h2>参考</h2>
+
+<p><a href="https://letsencrypt.org/">Homepage</a></p>
+
+<p><a href="https://letsencrypt.org/getting-started/">Getting Started</a></p>
+
+<p><a href="https://www.digitalocean.com/community/tutorials/how-to-secure-nginx-with-let-s-encrypt-on-ubuntu-14-04">Configure Nginx on Ubuntu 14.04</a></p>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-12-12T19:59:00+08:00" pubdate data-updated="true">Dec 12<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Promise</h2>
+
+<p>JavaScript 的并发编程模型是依赖回调函数的异步事件驱动模型。这种模型通过只使用单线程避免了多线程模型的诸多弊端，同时还可以充分利用单核 CPU，达到不错的性能表现。但是如果业务逻辑比较复杂，大量的异步回调函数会使代码非常难读难调试。Promise 是对回调函数的进一步抽象，力图在保留原有优势的情况下解决回调函数带来的问题。</p>
+
+<h2>Promise in jQuery</h2>
+
+<p>jQuery 可能是使用最多的 JavaScript 库，jQuery 的 Ajax 部分显然是异步的、依赖回调函数的，自然也就有上面说的各种问题。jQuery 从 1.5 版本开始引入了 Deferred 对象，Deferred 对象和相关的 Promise 对象是 jQuery 对 Promise 的实现。Deferred 包含两类方法，一类是修改内部状态的，一类是注册回调函数的，Promise 隐藏了 Deffered 的修改内部状态的方法，只保留了注册回调函数的接口。jQuery 1.5 的 Ajax 全部使用 Deferred 对象重写了，所以很多人可能已经通过 Ajax 操作使用过 Deferred 对象了。下面的例子是 Ajax 的两种写法：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// callback</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span><span class="p">,</span>
+</span><span class='line'>  <span class="nx">success</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span>
+</span><span class='line'>  <span class="nx">error</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// Promise object</span>
+</span><span class='line'><span class="nx">xhr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// chainable Promise object</span>
+</span><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">}).</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">}).</span><span class="nx">fail</span><span class="p">(</span><span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">error</span><span class="p">(</span><span class="s1">&#39;error&#39;</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>jQuery.ajax</code> 的返回值是一个 Promise 对象，<code>done</code> 和 <code>fail</code> 都是 Promise 对象的方法，而且返回值还是 Promise 对象自身。两种写法看上去好像差不多，<code>done</code> 对应 <code>success</code>，<code>fail</code> 对应 <code>error</code>。但是 Promise 对象的写法可以把把回调单独拿出来写，同时又因为可以使用链式写法，可读性上貌似好了一些。但是使用 Promise 的写法还有其他好处。</p>
+
+<p>首先，Promise 对象的 <code>done</code> 和 <code>fail</code> 方法可以调用多次，也就是可以自由关联多个回调函数，传统写法如果想关联多个回调，只能把多个函数用一个函数包裹后才可以。</p>
+
+<p>其次，我认为是最重要的，Promise 对象可以解耦事件注册和事件触发的顺序。在传统的 JavaScript 事件编程中，事件注册一定要在事件触发之前，否则可能会漏掉事件。看下面的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// correct</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">httpRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;/foo/bar&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// wrong!</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">httpRequest</span> <span class="o">=</span> <span class="k">new</span> <span class="nx">XMLHttpRequest</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="s1">&#39;GET&#39;</span><span class="p">,</span> <span class="s1">&#39;/foo/bar&#39;</span><span class="p">,</span> <span class="kc">true</span><span class="p">);</span>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">send</span><span class="p">(</span><span class="kc">null</span><span class="p">);</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">httpRequest</span><span class="p">.</span><span class="nx">onreadystatechange</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">arguments</span><span class="p">);</span>
+</span><span class='line'><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>第二段代码是错误的，在 <code>send</code> 之后再使用 <code>onreadystatechange</code> 注册回调函数有可能会漏掉一些事件。jQuery 的 <code>ajax</code> 函数通过把回调限制为参数的一部分来避免这个问题。</p>
+
+<p>Promise 则不一定需要保证这样的顺序，因为 Promise 对象内部保存了事件的状态，所以即使注册回调函数发生在事件触发之后，注册的回调函数仍然可以执行。下面的例子演示了这个过程。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">slow_func</span> <span class="o">=</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">for</span> <span class="p">(</span><span class="kd">var</span> <span class="nx">i</span> <span class="o">=</span> <span class="mi">0</span><span class="p">;</span> <span class="nx">i</span> <span class="o">&lt;</span> <span class="mi">1000000</span><span class="p">;</span> <span class="nx">i</span><span class="o">++</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="mi">1</span> <span class="o">+</span> <span class="mi">1</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">};</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span> <span class="o">=</span> <span class="nx">$</span><span class="p">.</span><span class="nx">ajax</span><span class="p">({</span>
+</span><span class='line'>  <span class="nx">url</span><span class="o">:</span> <span class="s1">&#39;/foo&#39;</span>
+</span><span class='line'><span class="p">});</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">slow_func</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1">// xhr completed here!</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">slow_func</span><span class="p">();</span>
+</span><span class='line'>
+</span><span class='line'>
+</span><span class='line'><span class="nx">xhr</span><span class="p">.</span><span class="nx">done</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">data</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="c1">// still executed!</span>
+</span><span class='line'>  <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="nx">data</span><span class="p">);</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>TBC Promise in ES2015</h2>
+</div>
+  
+  
+
+
+    </article>
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-10-05T20:50:00+08:00" pubdate data-updated="true">Oct 5<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><h2>Active Job</h2>
+
+<p>Rails 4.2 引入了异步任务框架 <a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a>。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方引入 Active Job 的目的并不是取代已有的异步任务框架，而是构建一层通用的异步任务接口，通过适配器对接不同的后端。这样，异步任务使用 Active Job 提供的接口编写，后端可以使用不同的框架执行，有点类似 ActiveRecord 与 MySQL、PostgreSQL 的关系。</p>
+
+<p>下面是一个简单的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># app/jobs/guests_cleanup_job.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">GuestsCleanupJob</span> <span class="o">&lt;</span> <span class="ss">ActiveJob</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">queue_as</span> <span class="ss">:default</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">perform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;start guests cleanup...&#39;</span>
+</span><span class='line'>    <span class="nb">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;stop guests cleanup.&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Active Job 与 Sidekiq 集成</h2>
+
+<p>根据 Rails Guide 中 <a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job Basics</a> 的说明，如果没有设置适配器，任务会立即执行。因此，想要实现任务的异步执行，必须集成一个后端。因为我比较熟悉 Sidekiq，所以选择 Sidekiq 作为后端。</p>
+
+<p>首先在配置中指定使用的后端适配器：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/application.rb</span>
+</span><span class='line'><span class="k">module</span> <span class="nn">YourApp</span>
+</span><span class='line'><span class="err">  </span><span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Application</span>
+</span><span class='line'><span class="err">    </span><span class="c1"># Be sure to have the adapter&#39;s gem in your Gemfile and follow</span>
+</span><span class='line'><span class="err">    </span><span class="c1"># the adapter&#39;s specific installation and deployment instructions.</span>
+</span><span class='line'><span class="err">    </span><span class="n">config</span><span class="o">.</span><span class="n">active_job</span><span class="o">.</span><span class="n">queue_adapter</span> <span class="o">=</span> <span class="ss">:sidekiq</span>
+</span><span class='line'><span class="err">  </span><span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>正如上面注释中写的，Active Job 只提供了设置后端适配器的选项，其余的设置都要参考 Sidekiq 本身的配置了。首先在 <code>Gemfile</code> 中加入 Sidekiq：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s1">&#39;sidekiq&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行 <code>bundle</code> 后就可以用 <code>bundle exec sidekiq</code> 启动 Sidekiq 了。</p>
+
+<h2>Sidekiq 配置</h2>
+
+<h3>Web UI</h3>
+
+<p>Sidekiq 有一个 Web 界面，可以比较方便的查看任务状态。首先在 <code>Gemfile</code> 中加入 Sinatra。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Gemfile</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># if you require &#39;sinatra&#39; you get the DSL extended to Object</span>
+</span><span class='line'><span class="n">gem</span> <span class="s1">&#39;sinatra&#39;</span><span class="p">,</span> <span class="ss">:require</span> <span class="o">=&gt;</span> <span class="kp">nil</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在 <code>config/routes.rb</code> 中挂载到一个地址，其中 <code>require 'sidekiq/web'</code> 是必需的。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/routes.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">routes</span><span class="o">.</span><span class="n">draw</span> <span class="k">do</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>  <span class="nb">require</span> <span class="s1">&#39;sidekiq/web&#39;</span>
+</span><span class='line'>  <span class="n">mount</span> <span class="ss">Sidekiq</span><span class="p">:</span><span class="ss">:Web</span><span class="p">,</span> <span class="ss">at</span><span class="p">:</span> <span class="s1">&#39;/sidekiq&#39;</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>bundle</code> 后重启 Rails 服务器就可以在 <code>localhost:3000/sidekiq</code> 看到 Sidekiq 的 Web 界面了。</p>
+
+<h3>Redis 设置</h3>
+
+<p>Sidekiq 依靠 Redis 实现异步功能，可以对 Redis 做一些设置。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/initializers/sidekiq.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;redis://localhost:6379/1&#39;</span>
+</span><span class='line'><span class="n">redis_config</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="ss">url</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">namespace</span><span class="p">:</span> <span class="s1">&#39;sidekiq&#39;</span><span class="p">,</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Sidekiq</span><span class="o">.</span><span class="n">configure_server</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">redis</span> <span class="o">=</span> <span class="n">redis_config</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Sidekiq</span><span class="o">.</span><span class="n">configure_client</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">redis</span> <span class="o">=</span> <span class="n">redis_config</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置指定了 Sidekiq 连接 Redis 使用的 URL 以及创建 key 时的前缀。URL 除了主机名和端口号，还可以指定一个数据库号，这个是 Redis 提供的数据隔离的一种方式。比如开发环境使用 0 号数据库，而测试环境使用 1 号数据库。<code>namespace</code> 也是数据隔离的一种方式，依赖 <code>redis-namespace</code>gem 实现，通过在 key 加上相同的前缀可以方便查看哪些 key 是 Sidekiq 创建和使用的。下面是 redis-cli 的输出。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% redis-cli</span>
+</span><span class='line'><span class="sx">127.0.0.1:6379&gt; </span><span class="no">SELECT</span> <span class="mi">1</span>
+</span><span class='line'><span class="no">OK</span>
+</span><span class='line'><span class="mi">127</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">1</span><span class="p">:</span><span class="mi">6379</span><span class="o">[</span><span class="mi">1</span><span class="o">]&gt;</span> <span class="no">KEYS</span> <span class="o">*</span>
+</span><span class='line'><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;sidekiq:stat:processed&quot;</span>
+</span><span class='line'><span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;sidekiq:stat:processed:2015-10-05&quot;</span>
+</span><span class='line'><span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;sidekiq:queues&quot;</span>
+</span><span class='line'><span class="mi">127</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">1</span><span class="p">:</span><span class="mi">6379</span><span class="o">[</span><span class="mi">1</span><span class="o">]&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置中出现了 <code>configure_server</code> 和 <code>configure_client</code> 两部分，是因为 Sidekiq 是 C/S 架构的。从 Redis 的角度看，向 Redis 队列中增加任务的是客户端，通常是 Puma、Unicorn 等 Rails 进程，从 Redis 队列中取任务的是服务端，一般就是 <code>bundle exec sidekiq</code> 启动的进程。</p>
+
+<h3>sidekiq.yml</h3>
+
+<p><code>sidekiq</code> 命令有许多选项可以设置，下面是 <code>bundle exec sidekiq -h</code> 的输出：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% bundle </span><span class="nb">exec</span> <span class="n">sidekiq</span> <span class="o">-</span><span class="n">h</span>
+</span><span class='line'><span class="mi">2015</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mo">05</span><span class="ss">T14</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">11</span><span class="o">.</span><span class="mi">607</span><span class="n">Z</span> <span class="mi">29897</span> <span class="no">TID</span><span class="o">-</span><span class="n">ovozeltdo</span> <span class="ss">INFO</span><span class="p">:</span> <span class="n">sidekiq</span> <span class="o">[</span><span class="n">options</span><span class="o">]</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">c</span><span class="p">,</span> <span class="o">--</span><span class="n">concurrency</span> <span class="no">INT</span>            <span class="n">processor</span> <span class="n">threads</span> <span class="n">to</span> <span class="n">use</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">d</span><span class="p">,</span> <span class="o">--</span><span class="n">daemon</span>                     <span class="no">Daemonize</span> <span class="n">process</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">e</span><span class="p">,</span> <span class="o">--</span><span class="n">environment</span> <span class="no">ENV</span>            <span class="no">Application</span> <span class="n">environment</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">g</span><span class="p">,</span> <span class="o">--</span><span class="n">tag</span> <span class="no">TAG</span>                    <span class="no">Process</span> <span class="n">tag</span> <span class="k">for</span> <span class="n">procline</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="o">--</span><span class="n">index</span> <span class="no">INT</span>                  <span class="n">unique</span> <span class="n">process</span> <span class="n">index</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">q</span><span class="p">,</span> <span class="o">--</span><span class="n">queue</span> <span class="no">QUEUE</span><span class="o">[</span><span class="p">,</span><span class="no">WEIGHT</span><span class="o">]</span>       <span class="no">Queues</span> <span class="n">to</span> <span class="n">process</span> <span class="n">with</span> <span class="n">optional</span> <span class="n">weights</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="o">--</span><span class="nb">require</span> <span class="o">[</span><span class="no">PATH</span><span class="o">|</span><span class="no">DIR</span><span class="o">]</span>         <span class="no">Location</span> <span class="n">of</span> <span class="no">Rails</span> <span class="n">application</span> <span class="n">with</span> <span class="n">workers</span> <span class="ow">or</span> <span class="n">file</span> <span class="n">to</span> <span class="nb">require</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">t</span><span class="p">,</span> <span class="o">--</span><span class="n">timeout</span> <span class="no">NUM</span>                <span class="no">Shutdown</span> <span class="n">timeout</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">verbose</span>                    <span class="no">Print</span> <span class="n">more</span> <span class="n">verbose</span> <span class="n">output</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">C</span><span class="p">,</span> <span class="o">--</span><span class="n">config</span> <span class="no">PATH</span>                <span class="n">path</span> <span class="n">to</span> <span class="no">YAML</span> <span class="n">config</span> <span class="n">file</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">L</span><span class="p">,</span> <span class="o">--</span><span class="n">logfile</span> <span class="no">PATH</span>               <span class="n">path</span> <span class="n">to</span> <span class="n">writable</span> <span class="n">logfile</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">P</span><span class="p">,</span> <span class="o">--</span><span class="n">pidfile</span> <span class="no">PATH</span>               <span class="n">path</span> <span class="n">to</span> <span class="n">pidfile</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">V</span><span class="p">,</span> <span class="o">--</span><span class="n">version</span>                    <span class="no">Print</span> <span class="n">version</span> <span class="ow">and</span> <span class="nb">exit</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>                       <span class="no">Show</span> <span class="n">help</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些选项同时也可以写到 <code>config/sidekiq.yml</code> 配置文件中，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="c1"># config/sidekiq.yml</span>
+</span><span class='line'>
+</span><span class='line'><span class="nn">---</span>
+</span><span class='line'><span class="l-Scalar-Plain">:daemon</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span><span class='line'><span class="l-Scalar-Plain">:verbose</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span><span class='line'><span class="l-Scalar-Plain">:pidfile</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./tmp/pids/sidekiq.pid</span>
+</span><span class='line'><span class="l-Scalar-Plain">:logfile</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./log/sidekiq.log</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置文件告诉 Sidekiq 以守护进程方式运行，输出更多日志，pid 文件和日志文件的路径。</p>
+
+<h3>结束 Sidekiq 守护进程</h3>
+
+<p>如果以守护进程方式运行，除了用 <code>ps</code> 和 <code>kill</code> 命令结束进程，还可以用 Sidekiq 提供的 <code>sidekiqctl</code> 命令。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="err">%</span> <span class="l-Scalar-Plain">sidekiqctl stop tmp/pids/sidekiq.pid</span>
+</span><span class='line'><span class="l-Scalar-Plain">Sidekiq shut down gracefully.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>sidekiqctl</code> 还有一个子命令 <code>quiet</code>，参考 <a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a>。</p>
+
+<h2>日志</h2>
+
+<p><code>ActiveJob#logger</code> 方法是 Active Job 提供的记录日志的方法，默认与其他 Rails 日志记录在同一个文件，如果想让 Sidekiq 进程的日志记录到单独的文件，可以使用 Sidekiq 的 logger <code>Sidekiq::Logging.logger</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">GuestsCleanupJob</span> <span class="o">&lt;</span> <span class="ss">ActiveJob</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">queue_as</span> <span class="ss">:default</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="ss">Sidekiq</span><span class="p">:</span><span class="ss">:Logging</span><span class="o">.</span><span class="n">logger</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">perform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="s1">&#39;start guests cleanup...&#39;</span>
+</span><span class='line'>    <span class="nb">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="s1">&#39;stop guests cleanup.&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考</h2>
+
+<p><a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a></p>
+
+<p><a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job guide</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq">Sidekiq</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/issues/638">Sidekiq client server</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a></p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -1409,362 +2387,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/02/14/redis-db-number/">Redis Database Number</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-02-14T22:00:00+08:00" pubdate data-updated="true">Feb 14<span>th</span>, 2015</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>Redis 使用 DB number 实现类似关系型数据库中 schema 的功能。不同 DB number 表示的数据库是隔离的，但是目前只能使用数字来表示一个数据库，Ubuntu 默认的配置文件配置了16个数据库，DB number 是从0开始的，并且默认连接0号数据库。</p>
-
-<h3>使用命令行连接其他数据库</h3>
-
-<p>可以使用 <code>-n</code> 选项指定连接的数据库号。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n &lt;dbnumber&gt;
-</span><span class='line'>
-</span><span class='line'><span class="nv">$ </span>redis-cli -n 2
-</span><span class='line'>127.0.0.1:6379<span class="o">[</span>2<span class="o">]</span>&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>如果已经执行 <code>redis-cli</code> 进入了 Redis 控制台，可以使用 <code>SELECT</code> 命令选择其他数据库。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 1
-</span><span class='line'>OK
-</span><span class='line'>127.0.0.1:6379<span class="o">[</span>1<span class="o">]</span>&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>在 Redis 控制台中，如果当前连接的不是0号数据库，提示符中会在方括号内显示当前连接的数据库号。</p>
-
-<h3>使用URL连接其他数据库</h3>
-
-<p>在连接 URL 后面添加数据库号即可。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>redis://127.0.0.1:6379/&lt;dbnumber&gt;
-</span><span class='line'>
-</span><span class='line'>redis://127.0.0.1:6379/1
-</span></code></pre></td></tr></table></div></figure>
-
-
-<h3>连接到不存在的数据库号</h3>
-
-<p>在命令行中，如果指定的数据库号超出了配置文件中的范围，貌似都会连接到0号数据库。使用 <code>redis-cli -n 10000</code> 这样的方式连错误都没有提示，而在Redis控制台中用 <code>SELECT 10000</code> 这样的方式会有错误提示，不过依然可以正常使用。不知道这算不算是 BUG。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="nv">$ </span>redis-cli -n 10000
-</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>127.0.0.1:6379&gt; SELECT 10000
-</span><span class='line'><span class="o">(</span>error<span class="o">)</span> ERR invalid DB index
-</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt; <span class="nb">set </span>number 10000
-</span><span class='line'>OK
-</span><span class='line'>127.0.0.1:6379<span class="o">[</span>10000<span class="o">]</span>&gt;
-</span></code></pre></td></tr></table></div></figure>
-
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/02/06/a-swift-tour-note/">A Swift Tour 笔记</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-02-06T23:06:00+08:00" pubdate data-updated="true">Feb 6<span>th</span>, 2015</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>最近看完了 The Swift Programming Language 中的 A Swift Tour 一节，对 Swift 有了一点初步的了解，在此记录一下学习过程中遇到的一些问题。</p>
-
-<h2>可变参数列表</h2>
-
-<p>Swift 的函数可以接受多个参数，把它们收集到一个数组中。这本来应该是一个不错的语言特性，但是在写对应的 experiment 时就发现问题了，Swift 只能把多个参数收集到数组中，却不能将一个数组打散成多个参数。Ruby 中可以用 <code>sumOf(*numbers)</code> 这样的方式实现将数据打散成多个参数，Swift 目前没有这样的功能，所以无法用下面的代码实现 <code>average</code> 函数。如果实在想用 <code>sumOf</code> 函数来实现 <code>average</code>，那只能将 <code>sumOf</code> 的参数改为数组类型的。只能期待Swift能在以后实现这样的功能了，目前来说尽量少用这样的蹩脚的语言特性吧。</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>func sumOf(numbers: Int...) -&gt; Int {
-</span><span class='line'>    var sum = 0
-</span><span class='line'>    for number in numbers {
-</span><span class='line'>        sum += number
-</span><span class='line'>    }
-</span><span class='line'>    return sum
-</span><span class='line'>}
-</span><span class='line'>sumOf()
-</span><span class='line'>sumOf(42, 597, 12)
-</span><span class='line'>
-</span><span class='line'>func average(numbers: Int...) -&gt; Double {
-</span><span class='line'>    let count = numbers.count
-</span><span class='line'>    // The code below do not work!
-</span><span class='line'>    // let avg = sumOf(*numbers) / count
-</span><span class='line'>    return avg
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<h2>枚举类型遍历</h2>
-
-<p>Swift 可以使用 <code>enum</code> 定义枚举类型，但是目前貌似没有非常方便的方法返回所有的枚举值。希望以后能添加这样的方法吧。</p>
-
-<h2>命名空间</h2>
-
-<p>Swift 有命名空间的功能，不过很少有地方提到。在解决下面与命名空间有关的一个问题时找到了 Lattner 大神的 Twitter，提到了显式使用命名空间。链接：<a href="https://twitter.com/clattner_llvm/status/474772713739792384">Chris Lattner suggests</a></p>
-
-<p>与命名空间有关的问题代码如下：</p>
-
-<figure class='code'><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-</pre></td><td class='code'><pre><code class=''><span class='line'>extension Int {
-</span><span class='line'>
-</span><span class='line'>    func restrictToRange(#minValue: Int, maxValue: Int) -&gt; Int {
-</span><span class='line'>        var ret: Int
-</span><span class='line'>
-</span><span class='line'>        // 'Int' does not have a member named 'min'
-</span><span class='line'>        //ret  = min(max(self, minValue), maxValue)
-</span><span class='line'>
-</span><span class='line'>        // use explicit namespace
-</span><span class='line'>        ret = Swift.min(Swift.max(self, minValue), maxValue)
-</span><span class='line'>        return ret
-</span><span class='line'>    }
-</span><span class='line'>
-</span><span class='line'>}</span></code></pre></td></tr></table></div></figure>
-
-
-<p>我想用 <code>extension</code> 向 <code>Int</code> 中添加一个方法，在其中用到了 <code>min</code> 和 <code>max</code> 两个全局函数，但是直接使用会有 <code>'Int' does not have a member named 'min'</code> 这样的错误提示，在函数名前加上显式的命名空间 <code>Swift</code> 后问题解决，但是引起该错误的原因没有找到，可能与作用域和符号查找有关吧，希望在以后能找出该问题的具体原因。</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/01/26/mount-ntfs-partition-as-writable-in-osx/">OSX 中挂载 NTFS 分区</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-01-26T22:29:00+08:00" pubdate data-updated="true">Jan 26<span>th</span>, 2015</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>我的移动硬盘是在用 Mac 之前买的，格式化为 NTFS 格式，可以在 Windows 和 Linux 中正常使用。换用 Mac 后，一开始只是从移动硬盘中读文件，没发觉有什么问题，一度以为网上说的 OSX 不支持 NTFS 的说法是针对老版本。直到又一次想要向移动硬盘中存文件，发现连新建目录都不行，这才了解到 OSX 默认把 NTFS 分区挂载为只读。</p>
-
-<p>原来 OSX 从 Snow Leopard 开始就内置了对 NTFS 分区的读写支持，但是默认将 NTFS 分区挂载为只读分区，具体原因不详。既然是内置读写支持，那就有办法将 NTFS 分区挂载为可读可写的分区。</p>
-
-<p>实现这个功能的命令是 <code>/sbin/mount_ntfs</code>，系统在实现移动硬盘自动挂载功能时也是间接使用该命令，所以网上有修改该文件来实现自动挂载为可读可写分区的方法。个人觉得修改系统原文件不是一个很好的方法，没有采用。不过也学到了使用该命令的方法。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>mount_ntfs -o rw,nobrowse DEVICE MOUNT_POINT
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>其中 <code>DEVICE</code> 是硬盘分区对应的设备文件， 比如 <code>/dev/disk2s1</code>，<code>MOUNT_POINT</code> 是挂载点，比如 <code>/Volumes/data</code>。通过 <code>-o rw,nobrowse</code> 这样的参数，可以将 NTFS 分区挂载为可读可写分区，其中的 <code>rw</code> 顾名思义，<code>nobrowse</code> 表示不在桌面和 Finder 中显示。不在桌面和 Finder 中显示很不方便，于是尝试只是用 <code>-o rw</code> 这样的参数，挂载的分区出现在了桌面和 Finder中，但是依然是只读分区，尝试失败。可能是系统做了限制，挂载为可读可写分区时不允许在桌面和 Finder 中显示。目前我的做法是将 <code>/Volumes</code> 目录放到 Finder 的个人收藏中，然后手动挂载分区到这个目录下的某个子目录。</p>
-</div>
-  
-  
-
-
-    </article>
-  
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2014/12/06/install-emacs-on-osx/">Install Emacs on OSX</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2014-12-06T16:24:00+08:00" pubdate data-updated="true">Dec 6<span>th</span>, 2014</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>原来在 Linux 和 Windows 系统都是用 Emacs，换了 MacBook Pro 后就考虑如何在 OSX 上安装 Emacs。其实 OSX 默认就安装了 Emacs，只不过版本太老，还是22的，而且貌似没有图形界面，所以还是需要安装新版本的有图形界面的Emacs。OSX 上貌似有好几种 Emacs，因为我使用 Homebrew 管理软件包，所以选择了用 Homebrew 安装 Emacs。在这里记录一下安装配置时遇到的问题。</p>
-
-<h2>使用 Homebrew 安装 Emacs</h2>
-
-<p>Homebrew 有 Emacs 的 formula，那就像其他软件一样安装吧。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'> <span class="c"># Do not use this command, it does not work well!</span>
-</span><span class='line'>brew install emacs
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>通过命令行的输出可以看到 Homebrew 默认选择 bottle 的方式安装 Emacs，bottle 方式就是直接下载已经编译好的软件包。一会儿安装完成，赶紧在命令行输入 <code>emacs --version</code>，确认是版本是新的，以为大功告成了。但是找了半天没找到怎么启动图形界面的 Emacs，遂上网查找问题。查找的结果是用上面的命令安装的 Emacs 只能在终端使用，根本就没有图形界面。想用图形界面，只能用编译的方式安装 Emacs。命令如下：</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew install emacs --cocoa
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>这样就会编译 Cocoa 版本的 Emacs，也就是有图形界面的。在写这篇文章时，Homebrew 中的 Emacs 版本为 24.4，安装这个版本不需要再加 <code>--srgb</code> 选项，貌似已经是默认行为，不需要写在命令中了。网上查到的资料大多都有 <code>--srgb</code> 选项，是24.4版本之前需要的选项，现在已经不需要了。</p>
-
-<p>安装完后仍然是不能直接启动图形界面的，需要做一个符号链接。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>ln -s /usr/local/Cellar/emacs/24.4/Emacs.app /Applications/Emacs.app
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>需要注意链接的路径，如果修改了 Homebrew 的安装路径，需要修改成对应的。到此，终于大功告成了。</p>
-
-<h2>修改 Emacs 修饰键</h2>
-
-<p>MacBook Pro 的键盘有一点让我非常不习惯，Control 键竟然只有一个！Command、Option、Shift 键都有两个，Control 键竟然只在左边有，右边的位置被方向键霸占了。OSX 的快捷键大多以 Command 开头，影响不大，但是 Emacs 可是大量使用 Control 键啊。原来的解决方案是使用外接键盘，现在不用外接键盘了，只能考虑其他方式了。用 Command 代替 Control 的功能是个不错的方法，经过上网查找，找到了几个 Emacs 的变量，可以实现该功能，只需添加下面的代码到配置文件即可。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-</pre></td><td class='code'><pre><code class='cl'><span class='line'><span class="p">(</span><span class="k">if</span> <span class="p">(</span><span class="nb">eq</span> <span class="nv">system-type</span> <span class="ss">&#39;darwin</span><span class="p">)</span>
-</span><span class='line'>    <span class="p">(</span><span class="k">progn</span>
-</span><span class='line'>      <span class="c1">;(setq mac-control-modifier &#39;super)</span>
-</span><span class='line'>      <span class="p">(</span><span class="k">setq</span> <span class="nv">mac-command-modifier</span> <span class="ss">&#39;control</span><span class="p">)))</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p><code>system-type</code> 变量表示当前系统类型，<code>darwin</code> 表示 OSX，<code>mac-command-modifier</code> 变量表示按下 Command 键输入哪个前缀。注释掉的那一行表示，用 Control 键实现原来 Command 键的功能，因为发生过误操作，所以注释不用了。</p>
-
-<h2>总结</h2>
-
-<p>这篇文章介绍了如何用 Homebrew 安装有图形界面的 Emacs，安装版本为24.4。原来安装过24.3版本的，有一个非常严重的BUG，一旦触发用 x-popup-dialog 打开的对话框，整个 Emacs 就没有响应了，只能通过系统的强制退出功能关掉程序。这其中就包括 <code>cmd + p</code> 这样的组合键，有时想按 <code>ctrl +p</code>，结果按成了 <code>cmd + p</code>，弹出和打印有关的对话框，然后整个 Emacs 就没有响应了，这也是更改 Command 键的功能的部分原因。现在重新安装了24.4，BUG没有了，使用起来更顺畅了。</p>
-
-<h2>参考</h2>
-
-<p><a href="http://emacsredux.com/blog/2014/01/11/a-peek-at-emacs-24-dot-4-srgb-colours-on-os-x/">http://emacsredux.com/blog/2014/01/11/a-peek-at-emacs-24-dot-4-srgb-colours-on-os-x/</a></p>
-
-<p><a href="http://stackoverflow.com/questions/1817257/how-to-determine-operating-system-in-elisp">http://stackoverflow.com/questions/1817257/how-to-determine-operating-system-in-elisp</a></p>
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -1780,23 +2402,23 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/02/letsencrypt/">尝试 Let&#8217;s Encrypt</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
       </li>
     
   </ul>
@@ -1809,7 +2431,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 -  -
+  Copyright &copy; 2016 -  -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

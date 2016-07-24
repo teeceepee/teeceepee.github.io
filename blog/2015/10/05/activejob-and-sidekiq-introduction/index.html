@@ -1,0 +1,494 @@
+
+<!DOCTYPE html>
+<!--[if IEMobile 7 ]><html class="no-js iem7"><![endif]-->
+<!--[if lt IE 9]><html class="no-js lte-ie8"><![endif]-->
+<!--[if (gt IE 8)|(gt IEMobile 7)|!(IEMobile)|!(IE)]><!--><html class="no-js" lang="en"><!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <title>Active Job 和 Sidekiq 简介 - Why Y</title>
+  <meta name="author" content="">
+
+  
+  <meta name="description" content="Active Job Rails 4.2 引入了异步任务框架 Active Job。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方引入 Active Job 的目的并不是取代已有的异步任务框架， &hellip;">
+  
+
+  <!-- http://t.co/dKP3o1e -->
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  
+  <link rel="canonical" href="http://teeceepee.github.com/blog/2015/10/05/activejob-and-sidekiq-introduction">
+  <link href="/favicon.png" rel="icon">
+  <link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+  <link href="/atom.xml" rel="alternate" title="Why Y" type="application/atom+xml">
+  <script src="/javascripts/modernizr-2.0.js"></script>
+<!--
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.9.1/jquery.min.js"></script>
+  <script>!window.jQuery && document.write(unescape('%3Cscript src="./javascripts/lib/jquery.min.js"%3E%3C/script%3E'))</script>
+-->
+  <script src="/javascripts/libs/jquery.min.js" type="text/javascript"></script>
+  <script src="/javascripts/octopress.js" type="text/javascript"></script>
+  <!--Fonts from Google"s Web font directory at http://google.com/webfonts -->
+<link href="http://fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+<link href="http://fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+
+  
+  <script type="text/javascript">
+    var _gaq = _gaq || [];
+    _gaq.push(['_setAccount', 'UA-67854007-1']);
+    _gaq.push(['_trackPageview']);
+
+    (function() {
+      var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+      ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+      var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+    })();
+  </script>
+
+
+</head>
+
+<body   >
+  <header role="banner"><hgroup>
+  <h1><a href="/">Why Y</a></h1>
+  
+</hgroup>
+
+</header>
+  <nav role="navigation"><ul class="subscription" data-subscription="rss">
+  <li><a href="/atom.xml" rel="subscribe-rss" title="subscribe via RSS">RSS</a></li>
+  
+</ul>
+  
+<form action="http://google.com/search" method="get">
+  <fieldset role="search">
+    <input type="hidden" name="q" value="site:teeceepee.github.com" />
+    <input class="search" type="text" name="q" results="0" placeholder="Search"/>
+  </fieldset>
+</form>
+  
+<ul class="main-navigation">
+  <li><a href="/">Blog</a></li>
+  <li><a href="/blog/archives">Archives</a></li>
+</ul>
+
+</nav>
+  <div id="main">
+    <div id="content">
+      <div>
+<article class="hentry" role="article">
+  
+  <header>
+    
+      <h1 class="entry-title">Active Job 和 Sidekiq 简介</h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-10-05T20:50:00+08:00" pubdate data-updated="true">Oct 5<span>th</span>, 2015</time>
+        
+      </p>
+    
+  </header>
+
+
+<div class="entry-content"><h2>Active Job</h2>
+
+<p>Rails 4.2 引入了异步任务框架 <a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a>。在 Active Job 出现之前，已经有许多与 Rails 配套的异步任务框架了，比如 Resque、Sidekiq 等。Rails 官方引入 Active Job 的目的并不是取代已有的异步任务框架，而是构建一层通用的异步任务接口，通过适配器对接不同的后端。这样，异步任务使用 Active Job 提供的接口编写，后端可以使用不同的框架执行，有点类似 ActiveRecord 与 MySQL、PostgreSQL 的关系。</p>
+
+<p>下面是一个简单的例子：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># app/jobs/guests_cleanup_job.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">GuestsCleanupJob</span> <span class="o">&lt;</span> <span class="ss">ActiveJob</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">queue_as</span> <span class="ss">:default</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">perform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;start guests cleanup...&#39;</span>
+</span><span class='line'>    <span class="nb">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>    <span class="nb">puts</span> <span class="s1">&#39;stop guests cleanup.&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>Active Job 与 Sidekiq 集成</h2>
+
+<p>根据 Rails Guide 中 <a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job Basics</a> 的说明，如果没有设置适配器，任务会立即执行。因此，想要实现任务的异步执行，必须集成一个后端。因为我比较熟悉 Sidekiq，所以选择 Sidekiq 作为后端。</p>
+
+<p>首先在配置中指定使用的后端适配器：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/application.rb</span>
+</span><span class='line'><span class="k">module</span> <span class="nn">YourApp</span>
+</span><span class='line'><span class="err">  </span><span class="k">class</span> <span class="nc">Application</span> <span class="o">&lt;</span> <span class="ss">Rails</span><span class="p">:</span><span class="ss">:Application</span>
+</span><span class='line'><span class="err">    </span><span class="c1"># Be sure to have the adapter&#39;s gem in your Gemfile and follow</span>
+</span><span class='line'><span class="err">    </span><span class="c1"># the adapter&#39;s specific installation and deployment instructions.</span>
+</span><span class='line'><span class="err">    </span><span class="n">config</span><span class="o">.</span><span class="n">active_job</span><span class="o">.</span><span class="n">queue_adapter</span> <span class="o">=</span> <span class="ss">:sidekiq</span>
+</span><span class='line'><span class="err">  </span><span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>正如上面注释中写的，Active Job 只提供了设置后端适配器的选项，其余的设置都要参考 Sidekiq 本身的配置了。首先在 <code>Gemfile</code> 中加入 Sidekiq：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">gem</span> <span class="s1">&#39;sidekiq&#39;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>执行 <code>bundle</code> 后就可以用 <code>bundle exec sidekiq</code> 启动 Sidekiq 了。</p>
+
+<h2>Sidekiq 配置</h2>
+
+<h3>Web UI</h3>
+
+<p>Sidekiq 有一个 Web 界面，可以比较方便的查看任务状态。首先在 <code>Gemfile</code> 中加入 Sinatra。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># Gemfile</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># if you require &#39;sinatra&#39; you get the DSL extended to Object</span>
+</span><span class='line'><span class="n">gem</span> <span class="s1">&#39;sinatra&#39;</span><span class="p">,</span> <span class="ss">:require</span> <span class="o">=&gt;</span> <span class="kp">nil</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>然后在 <code>config/routes.rb</code> 中挂载到一个地址，其中 <code>require 'sidekiq/web'</code> 是必需的。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/routes.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">routes</span><span class="o">.</span><span class="n">draw</span> <span class="k">do</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'>  <span class="nb">require</span> <span class="s1">&#39;sidekiq/web&#39;</span>
+</span><span class='line'>  <span class="n">mount</span> <span class="ss">Sidekiq</span><span class="p">:</span><span class="ss">:Web</span><span class="p">,</span> <span class="ss">at</span><span class="p">:</span> <span class="s1">&#39;/sidekiq&#39;</span>
+</span><span class='line'>  <span class="c1"># ...</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>bundle</code> 后重启 Rails 服务器就可以在 <code>localhost:3000/sidekiq</code> 看到 Sidekiq 的 Web 界面了。</p>
+
+<h3>Redis 设置</h3>
+
+<p>Sidekiq 依靠 Redis 实现异步功能，可以对 Redis 做一些设置。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="c1"># config/initializers/sidekiq.rb</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">url</span> <span class="o">=</span> <span class="s1">&#39;redis://localhost:6379/1&#39;</span>
+</span><span class='line'><span class="n">redis_config</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>  <span class="ss">url</span><span class="p">:</span> <span class="n">url</span><span class="p">,</span>
+</span><span class='line'>  <span class="ss">namespace</span><span class="p">:</span> <span class="s1">&#39;sidekiq&#39;</span><span class="p">,</span>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Sidekiq</span><span class="o">.</span><span class="n">configure_server</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">redis</span> <span class="o">=</span> <span class="n">redis_config</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="no">Sidekiq</span><span class="o">.</span><span class="n">configure_client</span> <span class="k">do</span> <span class="o">|</span><span class="n">config</span><span class="o">|</span>
+</span><span class='line'>  <span class="n">config</span><span class="o">.</span><span class="n">redis</span> <span class="o">=</span> <span class="n">redis_config</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置指定了 Sidekiq 连接 Redis 使用的 URL 以及创建 key 时的前缀。URL 除了主机名和端口号，还可以指定一个数据库号，这个是 Redis 提供的数据隔离的一种方式。比如开发环境使用 0 号数据库，而测试环境使用 1 号数据库。<code>namespace</code> 也是数据隔离的一种方式，依赖 <code>redis-namespace</code>gem 实现，通过在 key 加上相同的前缀可以方便查看哪些 key 是 Sidekiq 创建和使用的。下面是 redis-cli 的输出。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% redis-cli</span>
+</span><span class='line'><span class="sx">127.0.0.1:6379&gt; </span><span class="no">SELECT</span> <span class="mi">1</span>
+</span><span class='line'><span class="no">OK</span>
+</span><span class='line'><span class="mi">127</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">1</span><span class="p">:</span><span class="mi">6379</span><span class="o">[</span><span class="mi">1</span><span class="o">]&gt;</span> <span class="no">KEYS</span> <span class="o">*</span>
+</span><span class='line'><span class="mi">1</span><span class="p">)</span> <span class="s2">&quot;sidekiq:stat:processed&quot;</span>
+</span><span class='line'><span class="mi">2</span><span class="p">)</span> <span class="s2">&quot;sidekiq:stat:processed:2015-10-05&quot;</span>
+</span><span class='line'><span class="mi">3</span><span class="p">)</span> <span class="s2">&quot;sidekiq:queues&quot;</span>
+</span><span class='line'><span class="mi">127</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">0</span><span class="o">.</span><span class="mi">1</span><span class="p">:</span><span class="mi">6379</span><span class="o">[</span><span class="mi">1</span><span class="o">]&gt;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置中出现了 <code>configure_server</code> 和 <code>configure_client</code> 两部分，是因为 Sidekiq 是 C/S 架构的。从 Redis 的角度看，向 Redis 队列中增加任务的是客户端，通常是 Puma、Unicorn 等 Rails 进程，从 Redis 队列中取任务的是服务端，一般就是 <code>bundle exec sidekiq</code> 启动的进程。</p>
+
+<h3>sidekiq.yml</h3>
+
+<p><code>sidekiq</code> 命令有许多选项可以设置，下面是 <code>bundle exec sidekiq -h</code> 的输出：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="sx">% bundle </span><span class="nb">exec</span> <span class="n">sidekiq</span> <span class="o">-</span><span class="n">h</span>
+</span><span class='line'><span class="mi">2015</span><span class="o">-</span><span class="mi">10</span><span class="o">-</span><span class="mo">05</span><span class="ss">T14</span><span class="p">:</span><span class="mi">10</span><span class="p">:</span><span class="mi">11</span><span class="o">.</span><span class="mi">607</span><span class="n">Z</span> <span class="mi">29897</span> <span class="no">TID</span><span class="o">-</span><span class="n">ovozeltdo</span> <span class="ss">INFO</span><span class="p">:</span> <span class="n">sidekiq</span> <span class="o">[</span><span class="n">options</span><span class="o">]</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">c</span><span class="p">,</span> <span class="o">--</span><span class="n">concurrency</span> <span class="no">INT</span>            <span class="n">processor</span> <span class="n">threads</span> <span class="n">to</span> <span class="n">use</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">d</span><span class="p">,</span> <span class="o">--</span><span class="n">daemon</span>                     <span class="no">Daemonize</span> <span class="n">process</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">e</span><span class="p">,</span> <span class="o">--</span><span class="n">environment</span> <span class="no">ENV</span>            <span class="no">Application</span> <span class="n">environment</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">g</span><span class="p">,</span> <span class="o">--</span><span class="n">tag</span> <span class="no">TAG</span>                    <span class="no">Process</span> <span class="n">tag</span> <span class="k">for</span> <span class="n">procline</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">i</span><span class="p">,</span> <span class="o">--</span><span class="n">index</span> <span class="no">INT</span>                  <span class="n">unique</span> <span class="n">process</span> <span class="n">index</span> <span class="n">on</span> <span class="n">this</span> <span class="n">machine</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">q</span><span class="p">,</span> <span class="o">--</span><span class="n">queue</span> <span class="no">QUEUE</span><span class="o">[</span><span class="p">,</span><span class="no">WEIGHT</span><span class="o">]</span>       <span class="no">Queues</span> <span class="n">to</span> <span class="n">process</span> <span class="n">with</span> <span class="n">optional</span> <span class="n">weights</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">r</span><span class="p">,</span> <span class="o">--</span><span class="nb">require</span> <span class="o">[</span><span class="no">PATH</span><span class="o">|</span><span class="no">DIR</span><span class="o">]</span>         <span class="no">Location</span> <span class="n">of</span> <span class="no">Rails</span> <span class="n">application</span> <span class="n">with</span> <span class="n">workers</span> <span class="ow">or</span> <span class="n">file</span> <span class="n">to</span> <span class="nb">require</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">t</span><span class="p">,</span> <span class="o">--</span><span class="n">timeout</span> <span class="no">NUM</span>                <span class="no">Shutdown</span> <span class="n">timeout</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">v</span><span class="p">,</span> <span class="o">--</span><span class="n">verbose</span>                    <span class="no">Print</span> <span class="n">more</span> <span class="n">verbose</span> <span class="n">output</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">C</span><span class="p">,</span> <span class="o">--</span><span class="n">config</span> <span class="no">PATH</span>                <span class="n">path</span> <span class="n">to</span> <span class="no">YAML</span> <span class="n">config</span> <span class="n">file</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">L</span><span class="p">,</span> <span class="o">--</span><span class="n">logfile</span> <span class="no">PATH</span>               <span class="n">path</span> <span class="n">to</span> <span class="n">writable</span> <span class="n">logfile</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">P</span><span class="p">,</span> <span class="o">--</span><span class="n">pidfile</span> <span class="no">PATH</span>               <span class="n">path</span> <span class="n">to</span> <span class="n">pidfile</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">V</span><span class="p">,</span> <span class="o">--</span><span class="n">version</span>                    <span class="no">Print</span> <span class="n">version</span> <span class="ow">and</span> <span class="nb">exit</span>
+</span><span class='line'>    <span class="o">-</span><span class="n">h</span><span class="p">,</span> <span class="o">--</span><span class="n">help</span>                       <span class="no">Show</span> <span class="n">help</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>这些选项同时也可以写到 <code>config/sidekiq.yml</code> 配置文件中，比如：</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="c1"># config/sidekiq.yml</span>
+</span><span class='line'>
+</span><span class='line'><span class="nn">---</span>
+</span><span class='line'><span class="l-Scalar-Plain">:daemon</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span><span class='line'><span class="l-Scalar-Plain">:verbose</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">true</span>
+</span><span class='line'><span class="l-Scalar-Plain">:pidfile</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./tmp/pids/sidekiq.pid</span>
+</span><span class='line'><span class="l-Scalar-Plain">:logfile</span><span class="p-Indicator">:</span> <span class="l-Scalar-Plain">./log/sidekiq.log</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>上面的配置文件告诉 Sidekiq 以守护进程方式运行，输出更多日志，pid 文件和日志文件的路径。</p>
+
+<h3>结束 Sidekiq 守护进程</h3>
+
+<p>如果以守护进程方式运行，除了用 <code>ps</code> 和 <code>kill</code> 命令结束进程，还可以用 Sidekiq 提供的 <code>sidekiqctl</code> 命令。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+</pre></td><td class='code'><pre><code class='yaml'><span class='line'><span class="err">%</span> <span class="l-Scalar-Plain">sidekiqctl stop tmp/pids/sidekiq.pid</span>
+</span><span class='line'><span class="l-Scalar-Plain">Sidekiq shut down gracefully.</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><code>sidekiqctl</code> 还有一个子命令 <code>quiet</code>，参考 <a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a>。</p>
+
+<h2>日志</h2>
+
+<p><code>ActiveJob#logger</code> 方法是 Active Job 提供的记录日志的方法，默认与其他 Rails 日志记录在同一个文件，如果想让 Sidekiq 进程的日志记录到单独的文件，可以使用 Sidekiq 的 logger <code>Sidekiq::Logging.logger</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">GuestsCleanupJob</span> <span class="o">&lt;</span> <span class="ss">ActiveJob</span><span class="p">:</span><span class="ss">:Base</span>
+</span><span class='line'>  <span class="n">queue_as</span> <span class="ss">:default</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="nb">self</span><span class="o">.</span><span class="n">logger</span> <span class="o">=</span> <span class="ss">Sidekiq</span><span class="p">:</span><span class="ss">:Logging</span><span class="o">.</span><span class="n">logger</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">perform</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="s1">&#39;start guests cleanup...&#39;</span>
+</span><span class='line'>    <span class="nb">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">logger</span><span class="o">.</span><span class="n">debug</span> <span class="s1">&#39;stop guests cleanup.&#39;</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<h2>参考</h2>
+
+<p><a href="https://github.com/rails/rails/tree/master/activejob">Active Job</a></p>
+
+<p><a href="http://guides.rubyonrails.org/active_job_basics.html">Active Job guide</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq">Sidekiq</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/issues/638">Sidekiq client server</a></p>
+
+<p><a href="https://github.com/mperham/sidekiq/wiki/Signals">Sidekiq signals</a></p>
+</div>
+
+
+  <footer>
+    <p class="meta">
+      
+  
+
+
+
+      
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2015-10-05T20:50:00+08:00" pubdate data-updated="true">Oct 5<span>th</span>, 2015</time>
+      
+
+<span class="categories">
+  
+    <a class='category' href='/blog/categories/activejob/'>ActiveJob</a>, <a class='category' href='/blog/categories/sidekiq/'>Sidekiq</a>
+  
+</span>
+
+
+    </p>
+    
+      <div class="sharing">
+  
+  
+  
+</div>
+
+    
+    <p class="meta">
+      
+        <a class="basic-alignment left" href="/blog/2015/09/23/set-minimagick-command-path/" title="Previous Post: 设置 MiniMagick 查找命令的路径">&laquo; 设置 MiniMagick 查找命令的路径</a>
+      
+      
+        <a class="basic-alignment right" href="/blog/2015/12/12/promise-in-javascript/" title="Next Post: Promise in JavaScript">Promise in JavaScript &raquo;</a>
+      
+    </p>
+  </footer>
+</article>
+
+</div>
+
+<aside class="sidebar">
+  
+    <section>
+  <h1>Recent Posts</h1>
+  <ul id="recent_posts">
+    
+      <li class="post">
+        <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/02/letsencrypt/">尝试 Let's Encrypt</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
+      </li>
+    
+  </ul>
+</section>
+
+
+  
+</aside>
+
+
+    </div>
+  </div>
+  <footer role="contentinfo"><p>
+  Copyright &copy; 2016 -  -
+  <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
+</p>
+
+</footer>
+  
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>

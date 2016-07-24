@@ -120,7 +120,11 @@
 <p>通过命令行的输出可以看到 Homebrew 默认选择 bottle 的方式安装 Emacs，bottle 方式就是直接下载已经编译好的软件包。一会儿安装完成，赶紧在命令行输入 <code>emacs --version</code>，确认是版本是新的，以为大功告成了。但是找了半天没找到怎么启动图形界面的 Emacs，遂上网查找问题。查找的结果是用上面的命令安装的 Emacs 只能在终端使用，根本就没有图形界面。想用图形界面，只能用编译的方式安装 Emacs。命令如下：</p>
 
 <figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew install emacs --cocoa
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'><span class="c"># brew install emacs --cocoa</span>
+</span><span class='line'><span class="c"># 24.5 版本使用下面的命令</span>
+</span><span class='line'>brew install emacs --with-cocoa
 </span></code></pre></td></tr></table></div></figure>
 
 
@@ -155,6 +159,22 @@
 <h2>总结</h2>
 
 <p>这篇文章介绍了如何用 Homebrew 安装有图形界面的 Emacs，安装版本为24.4。原来安装过24.3版本的，有一个非常严重的BUG，一旦触发用 x-popup-dialog 打开的对话框，整个 Emacs 就没有响应了，只能通过系统的强制退出功能关掉程序。这其中就包括 <code>cmd + p</code> 这样的组合键，有时想按 <code>ctrl +p</code>，结果按成了 <code>cmd + p</code>，弹出和打印有关的对话框，然后整个 Emacs 就没有响应了，这也是更改 Command 键的功能的部分原因。现在重新安装了24.4，BUG没有了，使用起来更顺畅了。</p>
+
+<h2>更新 2015-10-06</h2>
+
+<p>Homebrew 里的 Emacs 更新到了 24.5，编译的选项发生了变化，可以使用 <code>brew info emacs</code> 查看。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew install emacs --with-cocoa
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>符号链接也可以用下面的命令实现，会链接到 <code>/Applications/</code> 目录。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+</pre></td><td class='code'><pre><code class='bash'><span class='line'>brew linkapps emacs
+</span></code></pre></td></tr></table></div></figure>
+
 
 <h2>参考</h2>
 
@@ -222,23 +242,23 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2016/04/02/letsencrypt/">尝试 Let's Encrypt</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
+      </li>
+    
+      <li class="post">
+        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/07/27/bootstrap-inputs-effect/">Bootstrap 输入框效果实现</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/16/explore-rubygems-2/">Explore RubyGems 2</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/05/12/explore-rubygems-1/">Explore RubyGems 1</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/04/26/explore-carrierwave/">Explore CarrierWave</a>
       </li>
     
   </ul>
@@ -252,7 +272,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2015 -  -
+  Copyright &copy; 2016 -  -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

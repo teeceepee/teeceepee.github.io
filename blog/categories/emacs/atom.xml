@@ -4,7 +4,7 @@
   <title><![CDATA[Category: Emacs | Why Y]]></title>
   <link href="http://teeceepee.github.com/blog/categories/emacs/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2015-09-23T22:17:43+08:00</updated>
+  <updated>2016-07-24T12:36:22+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -31,9 +31,14 @@ brew install emacs
 
 <p>通过命令行的输出可以看到 Homebrew 默认选择 bottle 的方式安装 Emacs，bottle 方式就是直接下载已经编译好的软件包。一会儿安装完成，赶紧在命令行输入 <code>emacs --version</code>，确认是版本是新的，以为大功告成了。但是找了半天没找到怎么启动图形界面的 Emacs，遂上网查找问题。查找的结果是用上面的命令安装的 Emacs 只能在终端使用，根本就没有图形界面。想用图形界面，只能用编译的方式安装 Emacs。命令如下：</p>
 
-<p><code>bash
-brew install emacs --cocoa
-</code></p>
+<p>``` bash</p>
+
+<h1>brew install emacs --cocoa</h1>
+
+<h1>24.5 版本使用下面的命令</h1>
+
+<p>brew install emacs --with-cocoa
+```</p>
 
 <p>这样就会编译 Cocoa 版本的 Emacs，也就是有图形界面的。在写这篇文章时，Homebrew 中的 Emacs 版本为 24.4，安装这个版本不需要再加 <code>--srgb</code> 选项，貌似已经是默认行为，不需要写在命令中了。网上查到的资料大多都有 <code>--srgb</code> 选项，是24.4版本之前需要的选项，现在已经不需要了。</p>
 
@@ -64,6 +69,20 @@ ln -s /usr/local/Cellar/emacs/24.4/Emacs.app /Applications/Emacs.app
 <h2>总结</h2>
 
 <p>这篇文章介绍了如何用 Homebrew 安装有图形界面的 Emacs，安装版本为24.4。原来安装过24.3版本的，有一个非常严重的BUG，一旦触发用 x-popup-dialog 打开的对话框，整个 Emacs 就没有响应了，只能通过系统的强制退出功能关掉程序。这其中就包括 <code>cmd + p</code> 这样的组合键，有时想按 <code>ctrl +p</code>，结果按成了 <code>cmd + p</code>，弹出和打印有关的对话框，然后整个 Emacs 就没有响应了，这也是更改 Command 键的功能的部分原因。现在重新安装了24.4，BUG没有了，使用起来更顺畅了。</p>
+
+<h2>更新 2015-10-06</h2>
+
+<p>Homebrew 里的 Emacs 更新到了 24.5，编译的选项发生了变化，可以使用 <code>brew info emacs</code> 查看。</p>
+
+<p><code>bash
+brew install emacs --with-cocoa
+</code></p>
+
+<p>符号链接也可以用下面的命令实现，会链接到 <code>/Applications/</code> 目录。</p>
+
+<p><code>bash
+brew linkapps emacs
+</code></p>
 
 <h2>参考</h2>
 
