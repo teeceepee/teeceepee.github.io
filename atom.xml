@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2016-08-07T10:53:21+08:00</updated>
+  <updated>2016-11-27T17:36:48+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,144 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[jQuery Utils Replacement]]></title>
+    <link href="http://teeceepee.github.com/blog/2016/11/27/jquery-utils-replacement/"/>
+    <updated>2016-11-27T16:25:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2016/11/27/jquery-utils-replacement</id>
+    <content type="html"><![CDATA[<p>曾几何时，编写跨浏览器的 JavaScript 代码是噩梦一般的存在。在那个浏览器差异巨大、标准提供的功能有限的时代，jQuery 出现后，依靠跨浏览器、功能丰富、接口简洁优雅的特性，迅速成为了前端开发的事实标准。直到现在，jQuery 可能依然是最流行的 JavaScript 库。但是到了现在，现代浏览器不再各自为战，开始遵循相同的标准，而标准本身也在前进，不断加入新的接口。很多逻辑已经可以使用原生的接口实现，不再依赖第三方库。</p>
+
+<p>在我看来，jQuery 的 DOM 操作接口依旧比原生接口好用，还是很难丢弃掉。但很多实用函数已经可以使用原生接口替代。下面整理了几个 jQuery 常用的实用函数，以及对应的原生接口。</p>
+
+<h2>$.each() 和 $.fn.each()</h2>
+
+<p>分别使用 <code>Array.prototype.forEach()</code> 和 <code>NodeList.forEach()</code> 替代。</p>
+
+<p>曾经 JavaScript 只能不停地使用循环来实现遍历，ECMAScript 5 新增了数组等类型的 <code>forEach</code> 方法，因此已经可以不使用 jQuery 的遍历函数了。而且现在最新版本的浏览器也开始支持 NodeList 实例的 <code>forEach</code> 方法。需要注意的是参数顺序是不一样的，<code>forEach</code> 的参数顺序更方便一些，因为很多时候并不需要下标。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">item</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">array</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">$</span><span class="p">(</span><span class="nx">selector</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">el</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="nx">selector</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach</a></p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/NodeList/forEach">https://developer.mozilla.org/en-US/docs/Web/API/NodeList/forEach</a></p>
+
+<h2>$.extend()</h2>
+
+<p>使用 <code>Object.assign()</code> 替代。</p>
+
+<p>很多库和框架都有自己的对象合并方法，方法名称一般是 <code>extend</code> 。ECMAScript 2015 新增了原生的对象合并方法，只不过名字叫 <code>assgin</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">({},</span> <span class="nx">objA</span><span class="p">,</span> <span class="nx">objB</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Object</span><span class="p">.</span><span class="nx">assign</span><span class="p">({},</span> <span class="nx">objA</span><span class="p">,</span> <span class="nx">objB</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign</a></p>
+
+<p><a href="https://github.com/nzakas/understandinges6/issues/99">https://github.com/nzakas/understandinges6/issues/99</a></p>
+
+<h2>$.map()</h2>
+
+<p>使用 <code>Array.prototype.map()</code> 替代。</p>
+
+<p>同样需要注意参数顺序。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">array</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map</a></p>
+
+<h2>$.proxy()</h2>
+
+<p>使用 <code>Function.prototype.bind()</code> 替代。</p>
+
+<p>函数的 <code>bind</code> 方法是 EMCAScript 5 中新增的非常重要的一个方法，有了它可以尽量避免 <code>that</code>, <code>self</code> 之类的愚蠢变量名。需要注意的是 <code>bind</code> 每次调用都返回一个新的函数，而 <code>$.proxy</code> 在内部做了缓存处理，多次调用返回的是同一个函数。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">proxy</span><span class="p">(</span><span class="nx">fn</span><span class="p">,</span> <span class="nx">context</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">fn</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind</a></p>
+
+<p><a href="http://stackoverflow.com/questions/18848343/underscore-bind-vs-jquery-proxy-vs-native-bind#answer-22860661">http://stackoverflow.com/questions/18848343/underscore-bind-vs-jquery-proxy-vs-native-bind#answer-22860661</a></p>
+
+<h2>$.trim()</h2>
+
+<p>使用 <code>String.prototype.trim()</code> 替代。</p>
+
+<p>MDN 中给出了一个 polyfill 的方法，jQuery 的实现几乎与其一样，<code>$.trim()</code> 不是字符串类型的方法，所以对 <code>null</code> 做了特殊处理，<code>$.trim(null) === ‘’</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">trim</span><span class="p">(</span><span class="nx">string</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">string</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim</a></p>
+
+<h2>总结</h2>
+
+<p>本文是阅读 <a href="http://youmightnotneedjquery.com/">You Might Not Need jQuery</a> 后写的，页面上有一个选择支持 IE 最老版本的按钮，通过切换不同的开关，可以看到越新的浏览器版本，实现相同功能的代码越简洁统一。相信在浏览器厂商和标准的共同努力下，可以让我们更好得使用原生接口编写前端代码。</p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Rails time zone]]></title>
@@ -2903,17 +3041,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 </span><span class='line'><span class="k">end</span>
 </span></code></pre></td></tr></table></div></figure>
 
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[Xfce桌面按钮扩展]]></title>
-    <link href="http://teeceepee.github.com/blog/2013/06/13/xfce-windowbutton/"/>
-    <updated>2013-06-13T22:12:00+08:00</updated>
-    <id>http://teeceepee.github.com/blog/2013/06/13/xfce-windowbutton</id>
-    <content type="html"><![CDATA[<p>前几天更新了一下 Debian 系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现 xfc 的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的，中间剩下的空间全都是窗口按钮。现在窗口按钮初始的长度几乎为零，后面的项目紧接着排在后面,这样屏幕底端变成空的了，不喜欢这样的布局。Google 这个问题后在 xfce 官网的<a href="http://www.xfce.org/about/tour?lang=zh_CN">关于</a>找到了答案。</p>
-
-<p><a href="http://www.xfce.org/about/tour?lang=zh_CN">xfce</a></p>
 ]]></content>
   </entry>
   

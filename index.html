@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="前几天发现自己写的 Rails 项目数据库里的时间不对，与实际时间相差了八个小时。作为一个生活在东八区的人，很容易理解这是一个与时区相关的问题。 首先检查 Rails 的配置，发现没有与时区相关的配置，说明这是 Rails 的默认行为。查了一些资料后，慢慢理解了 Rails 是如何处理时区的。 &hellip;">
+  <meta name="description" content="曾几何时，编写跨浏览器的 JavaScript 代码是噩梦一般的存在。在那个浏览器差异巨大、标准提供的功能有限的时代，jQuery 出现后，依靠跨浏览器、功能丰富、接口简洁优雅的特性，迅速成为了前端开发的事实标准。直到现在，jQuery 可能依然是最流行的 JavaScript 库。但是到了现在， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,171 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2016/11/27/jquery-utils-replacement/">jQuery Utils Replacement</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2016-11-27T16:25:00+08:00" pubdate data-updated="true">Nov 27<span>th</span>, 2016</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>曾几何时，编写跨浏览器的 JavaScript 代码是噩梦一般的存在。在那个浏览器差异巨大、标准提供的功能有限的时代，jQuery 出现后，依靠跨浏览器、功能丰富、接口简洁优雅的特性，迅速成为了前端开发的事实标准。直到现在，jQuery 可能依然是最流行的 JavaScript 库。但是到了现在，现代浏览器不再各自为战，开始遵循相同的标准，而标准本身也在前进，不断加入新的接口。很多逻辑已经可以使用原生的接口实现，不再依赖第三方库。</p>
+
+<p>在我看来，jQuery 的 DOM 操作接口依旧比原生接口好用，还是很难丢弃掉。但很多实用函数已经可以使用原生接口替代。下面整理了几个 jQuery 常用的实用函数，以及对应的原生接口。</p>
+
+<h2>$.each() 和 $.fn.each()</h2>
+
+<p>分别使用 <code>Array.prototype.forEach()</code> 和 <code>NodeList.forEach()</code> 替代。</p>
+
+<p>曾经 JavaScript 只能不停地使用循环来实现遍历，ECMAScript 5 新增了数组等类型的 <code>forEach</code> 方法，因此已经可以不使用 jQuery 的遍历函数了。而且现在最新版本的浏览器也开始支持 NodeList 实例的 <code>forEach</code> 方法。需要注意的是参数顺序是不一样的，<code>forEach</code> 的参数顺序更方便一些，因为很多时候并不需要下标。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">each</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">item</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">array</span><span class="p">.</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">$</span><span class="p">(</span><span class="nx">selector</span><span class="p">).</span><span class="nx">each</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">i</span><span class="p">,</span> <span class="nx">el</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">document</span><span class="p">.</span><span class="nx">querySelectorAll</span><span class="p">(</span><span class="nx">selector</span><span class="p">).</span><span class="nx">forEach</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">item</span><span class="p">,</span> <span class="nx">i</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/forEach</a></p>
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/API/NodeList/forEach">https://developer.mozilla.org/en-US/docs/Web/API/NodeList/forEach</a></p>
+
+<h2>$.extend()</h2>
+
+<p>使用 <code>Object.assign()</code> 替代。</p>
+
+<p>很多库和框架都有自己的对象合并方法，方法名称一般是 <code>extend</code> 。ECMAScript 2015 新增了原生的对象合并方法，只不过名字叫 <code>assgin</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">extend</span><span class="p">({},</span> <span class="nx">objA</span><span class="p">,</span> <span class="nx">objB</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nb">Object</span><span class="p">.</span><span class="nx">assign</span><span class="p">({},</span> <span class="nx">objA</span><span class="p">,</span> <span class="nx">objB</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object/assign</a></p>
+
+<p><a href="https://github.com/nzakas/understandinges6/issues/99">https://github.com/nzakas/understandinges6/issues/99</a></p>
+
+<h2>$.map()</h2>
+
+<p>使用 <code>Array.prototype.map()</code> 替代。</p>
+
+<p>同样需要注意参数顺序。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="nx">array</span><span class="p">,</span> <span class="kd">function</span><span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">array</span><span class="p">.</span><span class="nx">map</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">value</span><span class="p">,</span> <span class="nx">index</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Array/map</a></p>
+
+<h2>$.proxy()</h2>
+
+<p>使用 <code>Function.prototype.bind()</code> 替代。</p>
+
+<p>函数的 <code>bind</code> 方法是 EMCAScript 5 中新增的非常重要的一个方法，有了它可以尽量避免 <code>that</code>, <code>self</code> 之类的愚蠢变量名。需要注意的是 <code>bind</code> 每次调用都返回一个新的函数，而 <code>$.proxy</code> 在内部做了缓存处理，多次调用返回的是同一个函数。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">proxy</span><span class="p">(</span><span class="nx">fn</span><span class="p">,</span> <span class="nx">context</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">fn</span><span class="p">.</span><span class="nx">bind</span><span class="p">(</span><span class="nx">context</span><span class="p">)</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function/bind</a></p>
+
+<p><a href="http://stackoverflow.com/questions/18848343/underscore-bind-vs-jquery-proxy-vs-native-bind#answer-22860661">http://stackoverflow.com/questions/18848343/underscore-bind-vs-jquery-proxy-vs-native-bind#answer-22860661</a></p>
+
+<h2>$.trim()</h2>
+
+<p>使用 <code>String.prototype.trim()</code> 替代。</p>
+
+<p>MDN 中给出了一个 polyfill 的方法，jQuery 的实现几乎与其一样，<code>$.trim()</code> 不是字符串类型的方法，所以对 <code>null</code> 做了特殊处理，<code>$.trim(null) === ‘’</code>。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="nx">$</span><span class="p">.</span><span class="nx">trim</span><span class="p">(</span><span class="nx">string</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">string</span><span class="p">.</span><span class="nx">trim</span><span class="p">()</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim">https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim</a></p>
+
+<h2>总结</h2>
+
+<p>本文是阅读 <a href="http://youmightnotneedjquery.com/">You Might Not Need jQuery</a> 后写的，页面上有一个选择支持 IE 最老版本的按钮，通过切换不同的开关，可以看到越新的浏览器版本，实现相同功能的代码越简洁统一。相信在浏览器厂商和标准的共同努力下，可以让我们更好得使用原生接口编写前端代码。</p>
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -2299,94 +2464,6 @@
 
     </article>
   
-  
-    <article>
-      
-  <header>
-    
-      <h1 class="entry-title"><a href="/blog/2015/03/04/jquery-keep-text-inputs-in-sync/">用 jQuery 同步输入框内容</a></h1>
-    
-    
-      <p class="meta">
-        
-
-
-
-
-
-
-
-
-  
-
-
-<time datetime="2015-03-04T22:08:00+08:00" pubdate data-updated="true">Mar 4<span>th</span>, 2015</time>
-        
-      </p>
-    
-  </header>
-
-
-  <div class="entry-content"><p>前几天在项目中发现有不能正确同步输入框内容的页面，经过上网查找后找到了一种比较好的办法。</p>
-
-<p>要想同步输入框内容，就要监听各种可能使输入框内容发生改变的事件，第一个想到的就是监听键盘输入的事件，与键盘输入相关的事件有 <code>keydown</code>, <code>keypress</code>, <code>keyup</code> 等，<code>keydown</code> 和 <code>keypress</code> 发生在输入框内容改变之前，应该使用 <code>keyup</code> 事件。除了键盘输入外，通过粘贴的方式也会使输入框内容发生变化。 使用键盘快捷键粘贴的方式也会触发 <code>keyup</code> 事件，不过用鼠标右键粘贴的方式不触发 <code>keyup</code> 事件，鼠标右键粘贴会触发 <code>paste</code> 事件，但是该事件发生在输入框内容改变之前，不能正确同步内容。</p>
-
-<p>针对鼠标右键粘贴等方式没有找到太好的办法，只想出了一个折衷的办法：当输入框失去焦点时同步内容，这样虽然不能保持实时同步，但能保证最终同步。输入框失去焦点的事件是 <code>blur</code> 。</p>
-
-<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-</pre></td><td class='code'><pre><code class='html'><span class='line'><span class="nt">&lt;div&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;label&gt;</span>Input:<span class="nt">&lt;/label&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;input</span> <span class="na">id=</span><span class="s">&quot;input-field&quot;</span> <span class="na">type=</span><span class="s">&quot;text&quot;</span><span class="nt">&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;br&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;label&gt;</span>Output:<span class="nt">&lt;/label&gt;</span>
-</span><span class='line'>  <span class="nt">&lt;span</span> <span class="na">id=</span><span class="s">&quot;output-field&quot;</span><span class="nt">&gt;&lt;/span&gt;</span>
-</span><span class='line'><span class="nt">&lt;/div&gt;</span>
-</span><span class='line'><span class="nt">&lt;script&gt;</span>
-</span><span class='line'>  <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#input-field&#39;</span><span class="p">).</span><span class="nx">on</span><span class="p">(</span><span class="s1">&#39;keyup blur&#39;</span><span class="p">,</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
-</span><span class='line'>    <span class="nx">console</span><span class="p">.</span><span class="nx">log</span><span class="p">(</span><span class="s1">&#39;asdf&#39;</span><span class="p">);</span>
-</span><span class='line'>    <span class="nx">$</span><span class="p">(</span><span class="s1">&#39;#output-field&#39;</span><span class="p">).</span><span class="nx">text</span><span class="p">(</span><span class="nx">$</span><span class="p">(</span><span class="k">this</span><span class="p">).</span><span class="nx">val</span><span class="p">());</span>
-</span><span class='line'>  <span class="p">});</span>
-</span><span class='line'><span class="nt">&lt;/script&gt;</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-
-
-<div>
-  <label>Input:</label>
-  <input id="input-field" type="text">
-  <br>
-  <label>Output:</label>
-  <span id="output-field"></span>
-</div>
-
-
-<script>
-  $('#input-field').on('keyup blur', function() {
-    console.log('asdf');
-    $('#output-field').text($(this).val());
-  });
-</script>
-
-</div>
-  
-  
-
-
-    </article>
-  
   <div class="pagination">
     
       <a class="prev" href="/blog/page/2/">&larr; Older</a>
@@ -2402,6 +2479,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2016/11/27/jquery-utils-replacement/">jQuery Utils Replacement</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2016/07/10/rails-time-zone/">Rails time zone</a>
       </li>
     
@@ -2415,10 +2496,6 @@
     
       <li class="post">
         <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
-      </li>
-    
-      <li class="post">
-        <a href="/blog/2015/09/23/set-minimagick-command-path/">设置 MiniMagick 查找命令的路径</a>
       </li>
     
   </ul>
