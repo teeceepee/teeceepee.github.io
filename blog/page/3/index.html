@@ -9,7 +9,7 @@
   <meta name="author" content="">
 
   
-  <meta name="description" content="前几天更新了一下 Debian 系统，下载了几百兆的更新包，当时用的没问题挺好。昨天再开机后发现 xfc 的面板有问题，最大的变化是窗口按钮不再是扩展的，也就是它的长度会随着打开窗口的数量而变化。我用的面板是垂直的，窗口按钮下面还有其他的项目，原来后面这些项目都是从屏幕底端倒着排列的， &hellip;">
+  <meta name="description" content="这些天在看《ruby元编程》。其中有一个关于block的小测验，要模仿C#中的using关键字。 在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试， &hellip;">
   
 
   <!-- http://t.co/dKP3o1e -->
@@ -78,6 +78,192 @@
     <div id="content">
       <div class="blog-index">
   
+  
+  
+    <article>
+      
+  <header>
+    
+      <h1 class="entry-title"><a href="/blog/2013/07/19/metaprogramming-ruby-notes-1/">Metaprogramming Ruby Notes 1</a></h1>
+    
+    
+      <p class="meta">
+        
+
+
+
+
+
+
+
+
+  
+
+
+<time datetime="2013-07-19T13:55:00+08:00" pubdate data-updated="true">Jul 19<span>th</span>, 2013</time>
+        
+      </p>
+    
+  </header>
+
+
+  <div class="entry-content"><p>这些天在看<a href="http://book.douban.com/">《ruby元编程》</a>。其中有一个关于block的小测验，要模仿C#中的using关键字。</p>
+
+<p>在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试，但是仔细研究发现书中实现的using貌似有些问题，而且是大问题。实现using的目的在于在block中使用资源，使用完毕后自动将资源释放。因此using后面的block一定有一个参数代表资源，using的实现也应该将资源传递给block，所以正确的实现应该如下。</p>
+
+<figure class='code'><figcaption><span>using.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Kernel</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
+</span><span class='line'>    <span class="k">yield</span> <span class="n">resource</span>
+</span><span class='line'>  <span class="k">ensure</span>
+</span><span class='line'>    <span class="n">resource</span><span class="o">.</span><span class="n">dispose</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>书中的实现在<code>yield</code>后没有resource，无法将资源传递给block。不能在block中使用资源，写这玩意儿有啥用？我看的版本是中文版，不清楚原版是否也有这个错误。另外，书中使用的是<code>begin ... ensure ... end</code>，在用<code>def</code>定义方法时<code>begin</code>是可以省略的。</p>
+
+<p>之所以会出现这个问题，我认为是单元测试的用例写的不够严格。下面是与书中原测试等价的测试用例。</p>
+
+<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;test/unit&#39;</span>
+</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./using.rb&#39;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">Resource</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">dispose</span>
+</span><span class='line'>    <span class="vi">@dispose</span> <span class="o">=</span> <span class="kp">true</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">disposed?</span>
+</span><span class='line'>    <span class="vi">@dispose</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">class</span> <span class="nc">TestUsing</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">setup</span>
+</span><span class='line'>    <span class="vi">@r</span> <span class="o">=</span> <span class="no">Resource</span><span class="o">.</span><span class="n">new</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources</span>
+</span><span class='line'>    <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
+</span><span class='line'>    <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources_in_case_of_exception</span>
+</span><span class='line'>    <span class="n">assert_raises</span><span class="p">(</span><span class="no">Exception</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>        <span class="k">raise</span> <span class="no">Exception</span>
+</span><span class='line'>      <span class="k">end</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>可以看到，两个测试在block中都没有使用资源。测试的不严谨导致了这个using的大bug。至少应该再添加一个测试，比如：</p>
+
+<figure class='code'><figcaption><span>using_test_add.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_with_block_argument</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>添加这个测试后，书中原代码会无法通过测试，因此可以发现这一bug。</p>
+
+<h1>后记</h1>
+
+<p>刚写完上面的，正在想怎么总结结尾的时候，一个想法忽然在脑海中闪现出来：我是否真的理解了书中设计的using的用法。按照我自己的想法，using的参数是一个实现了dispose方法的资源，后面的block是单形参的。这样using将资源传递给block，在block中使用形参代表资源。后来想了想，using后面的block其实也可以访问到外面的资源，没有必要设置一个参数来传递资源。比如：</p>
+
+<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_using</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
+</span><span class='line'>    <span class="c1"># something using @r</span>
+</span><span class='line'>    <span class="c1"># ...</span>
+</span><span class='line'>    <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>改完测试，运行通过，那这篇博文怎么办&#8230;
+删还是不删，这是一个问题&#8230;</p>
+
+<h1>后记的后记</h1>
+
+<p>终于想出一个不用删掉这篇文章的理由，那就是通过参数传递资源的方式要灵活那么一点。书上的写法因为没有使用参数，所以using后的block必须定义在要立即使用资源的地方，当然C#中的using大约也是这样使用的。但如果资源是通过block的参数传递的，那么这个block就可以通过 <code>Proc.new</code> 或者 <code>lambda</code> 定义在任何地方。比如：</p>
+
+<figure class='code'><figcaption><span>using_define_anywhere.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_define_anywhere</span>
+</span><span class='line'>  <span class="nb">p</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
+</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">p</span><span class="p">)</span>
+</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
+</span><span class='line'><span class="k">end</span>
+</span></code></pre></td></tr></table></div></figure>
+
+</div>
+  
+  
+
+
+    </article>
   
   
     <article>
@@ -206,6 +392,10 @@
   <ul id="recent_posts">
     
       <li class="post">
+        <a href="/blog/2017/02/14/difference-between-encrypting-and-signing/">加密与签名的区别</a>
+      </li>
+    
+      <li class="post">
         <a href="/blog/2016/11/27/jquery-utils-replacement/">jQuery Utils Replacement</a>
       </li>
     
@@ -221,10 +411,6 @@
         <a href="/blog/2015/12/12/promise-in-javascript/">Promise in JavaScript</a>
       </li>
     
-      <li class="post">
-        <a href="/blog/2015/10/05/activejob-and-sidekiq-introduction/">Active Job 和 Sidekiq 简介</a>
-      </li>
-    
   </ul>
 </section>
 
@@ -235,7 +421,7 @@
     </div>
   </div>
   <footer role="contentinfo"><p>
-  Copyright &copy; 2016 -  -
+  Copyright &copy; 2017 -  -
   <span class="credit">Powered by <a href="http://octopress.org">Octopress</a></span>
 </p>
 

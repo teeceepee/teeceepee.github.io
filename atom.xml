@@ -4,7 +4,7 @@
   <title><![CDATA[Why Y]]></title>
   <link href="http://teeceepee.github.com/atom.xml" rel="self"/>
   <link href="http://teeceepee.github.com/"/>
-  <updated>2016-11-27T17:36:48+08:00</updated>
+  <updated>2017-02-14T23:08:31+08:00</updated>
   <id>http://teeceepee.github.com/</id>
   <author>
     <name><![CDATA[]]></name>
@@ -12,6 +12,85 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[加密与签名的区别]]></title>
+    <link href="http://teeceepee.github.com/blog/2017/02/14/difference-between-encrypting-and-signing/"/>
+    <updated>2017-02-14T22:48:00+08:00</updated>
+    <id>http://teeceepee.github.com/blog/2017/02/14/difference-between-encrypting-and-signing</id>
+    <content type="html"><![CDATA[<p>最近要在 Redis 里放一点敏感数据，于是就在 Rails 里找实现加密的东西。Rails 有 <code>cookies.encrypted</code> 和 <code>cookies.signed</code> 两个方法，区别一直没搞明白，这次研究了一下，终于明白了。</p>
+
+<h2>加密</h2>
+
+<p>加密的目的是保证数据只能通过秘钥才能查看，没有秘钥看不到任何数据。</p>
+
+<h2>签名</h2>
+
+<p>签名的目的是保证数据不会被篡改或伪造，但是可以在没有秘钥的情况下查看原数据！</p>
+
+<h2>示例</h2>
+
+<p>ActiveSupport 中有加密和签名的功能，对应的类是 ActiveSupport::MessageEncryptor 和 ActiveSupport::MessageVerifier。下面的例子展示了它们的用法以及区别。</p>
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">secret</span> <span class="o">=</span> <span class="s1">&#39;secret&#39;</span> <span class="o">*</span> <span class="mi">10</span>
+</span><span class='line'><span class="n">encryptor</span> <span class="o">=</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:MessageEncryptor</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">secret</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="n">encrypted_data</span> <span class="o">=</span> <span class="n">encryptor</span><span class="o">.</span><span class="n">encrypt_and_sign</span><span class="p">(</span><span class="s1">&#39;You cannot see me&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># with secret</span>
+</span><span class='line'><span class="n">encryptor</span><span class="o">.</span><span class="n">decrypt_and_verify</span><span class="p">(</span><span class="n">encrypted_data</span><span class="p">)</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;You cannot see me&quot;</span>
+</span><span class='line'><span class="c1"># You can do nothing without secret</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+
+
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">secret</span> <span class="o">=</span> <span class="s1">&#39;secret&#39;</span> <span class="o">*</span> <span class="mi">10</span>
+</span><span class='line'><span class="n">verifier</span> <span class="o">=</span> <span class="ss">ActiveSupport</span><span class="p">:</span><span class="ss">:MessageVerifier</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="n">secret</span><span class="p">)</span>
+</span><span class='line'><span class="n">signed_data</span> <span class="o">=</span> <span class="n">verifier</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span><span class="s1">&#39;You cannot see me&#39;</span><span class="p">)</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># with secret</span>
+</span><span class='line'><span class="n">verifier</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">signed_data</span><span class="p">)</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;You cannot see me&quot;</span>
+</span><span class='line'>
+</span><span class='line'><span class="c1"># without secret !!!</span>
+</span><span class='line'><span class="n">encoded</span> <span class="o">=</span> <span class="n">signed_data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;--&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'><span class="no">Marshal</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="no">Base64</span><span class="o">.</span><span class="n">strict_decode64</span><span class="p">(</span><span class="n">encoded</span><span class="p">))</span>
+</span><span class='line'><span class="c1"># =&gt; &quot;You cannot see me&quot;</span>
+</span></code></pre></td></tr></table></div></figure>
+
+
+<p>值得一提的是，ActiveSupport::MessageEncryptor 除了加密，也提供了签名的功能，从方法名中可以看出这一点。</p>
+
+<h2>参考</h2>
+
+<p><a href="http://www.monkeyandcrow.com/blog/reading_rails_how_does_message_verifier_work/">Reading Rails - How Does MessageVerifier Work?</a></p>
+
+<p><a href="http://www.monkeyandcrow.com/blog/reading_rails_how_does_message_encryptor_work/">Reading Rails - How Does MessageEncryptor Work?</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[jQuery Utils Replacement]]></title>
@@ -2882,165 +2961,6 @@ Ruby有自己的独立版本库，使用的应该是svn，不过在GitHub上有�
 <p>最后一行就是image的输出。</p>
 
 <p>最后再说一遍“F*K GFW”，搞这么多就为了替代<code>docker pull</code>一行命令。</p>
-]]></content>
-  </entry>
-  
-  <entry>
-    <title type="html"><![CDATA[metaprogramming ruby notes 1]]></title>
-    <link href="http://teeceepee.github.com/blog/2013/07/19/metaprogramming-ruby-notes-1/"/>
-    <updated>2013-07-19T13:55:00+08:00</updated>
-    <id>http://teeceepee.github.com/blog/2013/07/19/metaprogramming-ruby-notes-1</id>
-    <content type="html"><![CDATA[<p>这些天在看<a href="http://book.douban.com/">《ruby元编程》</a>。其中有一个关于block的小测验，要模仿C#中的using关键字。</p>
-
-<p>在Ruby中，using可以通过内核方法写一个。内核方法即添加到Kernel模块中的方法，因此可以在程序的任何地方使用，有点像一个关键字。书中给的答案可以通过测试，但是仔细研究发现书中实现的using貌似有些问题，而且是大问题。实现using的目的在于在block中使用资源，使用完毕后自动将资源释放。因此using后面的block一定有一个参数代表资源，using的实现也应该将资源传递给block，所以正确的实现应该如下。</p>
-
-<figure class='code'><figcaption><span>using.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">module</span> <span class="nn">Kernel</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">using</span><span class="p">(</span><span class="n">resource</span><span class="p">)</span>
-</span><span class='line'>    <span class="k">yield</span> <span class="n">resource</span>
-</span><span class='line'>  <span class="k">ensure</span>
-</span><span class='line'>    <span class="n">resource</span><span class="o">.</span><span class="n">dispose</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>书中的实现在<code>yield</code>后没有resource，无法将资源传递给block。不能在block中使用资源，写这玩意儿有啥用？我看的版本是中文版，不清楚原版是否也有这个错误。另外，书中使用的是<code>begin ... ensure ... end</code>，在用<code>def</code>定义方法时<code>begin</code>是可以省略的。</p>
-
-<p>之所以会出现这个问题，我认为是单元测试的用例写的不够严格。下面是与书中原测试等价的测试用例。</p>
-
-<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-<span class='line-number'>9</span>
-<span class='line-number'>10</span>
-<span class='line-number'>11</span>
-<span class='line-number'>12</span>
-<span class='line-number'>13</span>
-<span class='line-number'>14</span>
-<span class='line-number'>15</span>
-<span class='line-number'>16</span>
-<span class='line-number'>17</span>
-<span class='line-number'>18</span>
-<span class='line-number'>19</span>
-<span class='line-number'>20</span>
-<span class='line-number'>21</span>
-<span class='line-number'>22</span>
-<span class='line-number'>23</span>
-<span class='line-number'>24</span>
-<span class='line-number'>25</span>
-<span class='line-number'>26</span>
-<span class='line-number'>27</span>
-<span class='line-number'>28</span>
-<span class='line-number'>29</span>
-<span class='line-number'>30</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="nb">require</span> <span class="s1">&#39;test/unit&#39;</span>
-</span><span class='line'><span class="nb">require</span> <span class="s1">&#39;./using.rb&#39;</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">Resource</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">dispose</span>
-</span><span class='line'>    <span class="vi">@dispose</span> <span class="o">=</span> <span class="kp">true</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">disposed?</span>
-</span><span class='line'>    <span class="vi">@dispose</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'><span class="k">class</span> <span class="nc">TestUsing</span> <span class="o">&lt;</span> <span class="ss">Test</span><span class="p">:</span><span class="ss">:Unit</span><span class="o">::</span><span class="no">TestCase</span>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">setup</span>
-</span><span class='line'>    <span class="vi">@r</span> <span class="o">=</span> <span class="no">Resource</span><span class="o">.</span><span class="n">new</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources</span>
-</span><span class='line'>    <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="p">{</span> <span class="p">}</span>
-</span><span class='line'>    <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>
-</span><span class='line'>  <span class="k">def</span> <span class="nf">test_disposes_of_resources_in_case_of_exception</span>
-</span><span class='line'>    <span class="n">assert_raises</span><span class="p">(</span><span class="no">Exception</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>      <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>        <span class="k">raise</span> <span class="no">Exception</span>
-</span><span class='line'>      <span class="k">end</span>
-</span><span class='line'>    <span class="k">end</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>可以看到，两个测试在block中都没有使用资源。测试的不严谨导致了这个using的大bug。至少应该再添加一个测试，比如：</p>
-
-<figure class='code'><figcaption><span>using_test_add.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_with_block_argument</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>添加这个测试后，书中原代码会无法通过测试，因此可以发现这一bug。</p>
-
-<h1>后记</h1>
-
-<p>刚写完上面的，正在想怎么总结结尾的时候，一个想法忽然在脑海中闪现出来：我是否真的理解了书中设计的using的用法。按照我自己的想法，using的参数是一个实现了dispose方法的资源，后面的block是单形参的。这样using将资源传递给block，在block中使用形参代表资源。后来想了想，using后面的block其实也可以访问到外面的资源，没有必要设置一个参数来传递资源。比如：</p>
-
-<figure class='code'><figcaption><span>using_test.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-<span class='line-number'>8</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_using</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">)</span> <span class="k">do</span>
-</span><span class='line'>    <span class="c1"># something using @r</span>
-</span><span class='line'>    <span class="c1"># ...</span>
-</span><span class='line'>    <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
-
-<p>改完测试，运行通过，那这篇博文怎么办&#8230;
-删还是不删，这是一个问题&#8230;</p>
-
-<h1>后记的后记</h1>
-
-<p>终于想出一个不用删掉这篇文章的理由，那就是通过参数传递资源的方式要灵活那么一点。书上的写法因为没有使用参数，所以using后的block必须定义在要立即使用资源的地方，当然C#中的using大约也是这样使用的。但如果资源是通过block的参数传递的，那么这个block就可以通过 <code>Proc.new</code> 或者 <code>lambda</code> 定义在任何地方。比如：</p>
-
-<figure class='code'><figcaption><span>using_define_anywhere.rb</span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
-<span class='line-number'>2</span>
-<span class='line-number'>3</span>
-<span class='line-number'>4</span>
-<span class='line-number'>5</span>
-<span class='line-number'>6</span>
-<span class='line-number'>7</span>
-</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">def</span> <span class="nf">test_define_anywhere</span>
-</span><span class='line'>  <span class="nb">p</span> <span class="o">=</span> <span class="no">Proc</span><span class="o">.</span><span class="n">new</span> <span class="k">do</span> <span class="o">|</span><span class="n">r</span><span class="o">|</span>
-</span><span class='line'>    <span class="n">r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'>  <span class="k">end</span>
-</span><span class='line'>  <span class="n">using</span><span class="p">(</span><span class="vi">@r</span><span class="p">,</span> <span class="o">&amp;</span><span class="nb">p</span><span class="p">)</span>
-</span><span class='line'>  <span class="n">assert</span> <span class="vi">@r</span><span class="o">.</span><span class="n">disposed?</span>
-</span><span class='line'><span class="k">end</span>
-</span></code></pre></td></tr></table></div></figure>
-
 ]]></content>
   </entry>
   
